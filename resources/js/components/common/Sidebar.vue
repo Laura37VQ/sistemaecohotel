@@ -11,7 +11,7 @@ function toggleServiciosSubmenu() {
 </script>
 
 <template>
-  <div class="h-screen w-64 bg-[#2E7D32] text-white flex flex-col">
+  <div class="min-h-screen w-64 bg-[#2E7D32] text-white flex flex-col overflow-y-auto">
     <!-- Logo y nombre del hotel -->
     <div class="p-4 flex items-center gap-3 border-b border-white/20">
       <img

@@ -312,7 +312,7 @@ class ClienteController extends Controller
             if ($factura) {
                 $factura->update([
                     'estado' => 'Anulada',
-                    'metodo_pago' => 'N/A',
+                    'metodo_pago' => 'Pendiente',
                 ]);
             }
         });

@@ -9,10 +9,48 @@ use Illuminate\Validation\Rule;
 
 class HabitacionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $habitaciones = Habitacion::orderBy('numero_habitacion')->paginate(10);
-        return inertia('Admin/Habitaciones/Index', compact('habitaciones'));
+        /* -------------------------------------------------------
+           Filtros recibidos desde Vue
+        ------------------------------------------------------- */
+        $q      = trim((string)$request->query('q', ''));
+        $tipo   = $request->query('tipo', '');
+        $estado = $request->query('estado', '');
+
+        /* -------------------------------------------------------
+           Construcción dinámica de filtros
+        ------------------------------------------------------- */
+        $habitaciones = Habitacion::query()
+
+            // Filtro general (número, tipo, descripción)
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where('numero_habitacion', 'like', "%$q%")
+                      ->orWhere('tipo', 'like', "%$q%")
+                      ->orWhere('descripcion', 'like', "%$q%");
+            })
+
+            // Filtro por tipo
+            ->when($tipo !== '', fn($query) => $query->where('tipo', $tipo))
+
+            // Filtro por estado
+            ->when($estado !== '', fn($query) => $query->where('estado', $estado))
+
+            ->orderBy('numero_habitacion')
+            ->paginate(10)
+            ->withQueryString();
+
+        /* -------------------------------------------------------
+           Retorno a Inertia con filtros para mantener datos
+        ------------------------------------------------------- */
+        return inertia('Admin/Habitaciones/Index', [
+            'habitaciones' => $habitaciones,
+            'filtros'      => [
+                'q'      => $q,
+                'tipo'   => $tipo,
+                'estado' => $estado,
+            ]
+        ]);
     }
 
     public function create()
@@ -23,13 +61,13 @@ class HabitacionController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'numero_habitacion' => 'required|string|max:10|unique:habitaciones,numero_habitacion',
-            'tipo' => 'required|in:Individual,Doble,Suite,Familiar',
-            'capacidad_personas' => 'required|integer|min:1',
-            'descripcion' => 'required|string',
-            'precio' => 'required|numeric|min:0',
-            'estado' => 'required|in:Disponible,Ocupada,Mantenimiento,Inactivo',
-            'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'numero_habitacion'   => 'required|string|max:10|unique:habitaciones,numero_habitacion',
+            'tipo'                => 'required|in:Individual,Doble,Suite,Familiar',
+            'capacidad_personas'  => 'required|integer|min:1',
+            'descripcion'         => 'required|string',
+            'precio'              => 'required|numeric|min:0',
+            'estado'              => 'required|in:Disponible,Ocupada,Mantenimiento,Inactivo',
+            'foto'                => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         $data = $request->only([
@@ -53,10 +91,8 @@ class HabitacionController extends Controller
 
     public function edit($id)
     {
-        $habitacion = Habitacion::findOrFail($id);
-
         return inertia('Admin/Habitaciones/HabitacionForm', [
-            'habitacion' => $habitacion
+            'habitacion' => Habitacion::findOrFail($id)
         ]);
     }
 
@@ -71,12 +107,12 @@ class HabitacionController extends Controller
                 'max:10',
                 Rule::unique('habitaciones', 'numero_habitacion')->ignore($habitacion->id),
             ],
-            'tipo' => 'required|in:Individual,Doble,Suite,Familiar',
+            'tipo'               => 'required|in:Individual,Doble,Suite,Familiar',
             'capacidad_personas' => 'required|integer|min:1',
-            'descripcion' => 'required|string',
-            'precio' => 'required|numeric|min:0',
-            'estado' => 'required|in:Disponible,Ocupada,Mantenimiento,Inactivo',
-            'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'descripcion'        => 'required|string',
+            'precio'             => 'required|numeric|min:0',
+            'estado'             => 'required|in:Disponible,Ocupada,Mantenimiento,Inactivo',
+            'foto'               => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         $data = $request->except('foto');
@@ -93,8 +129,7 @@ class HabitacionController extends Controller
 
     public function destroy($id)
     {
-        $habitacion = Habitacion::findOrFail($id);
-        $habitacion->delete();
+        Habitacion::findOrFail($id)->delete();
 
         return redirect()->route('admin.habitaciones.index')
                          ->with('success', 'Habitación eliminada correctamente.');

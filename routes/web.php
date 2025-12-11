@@ -83,12 +83,20 @@ Route::middleware(['auth'])->group(function () {
         
         });
 
-
-        // Reportes
+        // Reportes normales
         Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
         Route::get('/reportes/ocupacion', [ReporteController::class, 'ocupacion'])->name('reportes.ocupacion');
         Route::get('/reportes/ingresos', [ReporteController::class, 'ingresos'])->name('reportes.ingresos');
         Route::get('/reportes/clientes', [ReporteController::class, 'clientes'])->name('reportes.clientes');
+        
+        // PDF de ingresos
+        Route::get('/reportes/ingresos/pdf', [ReporteController::class, 'pdfIngresos'])->name('reportes.ingresos.pdf');
+
+        // PDF de clientes 
+        Route::get('/reportes/clientes/pdf', [ReporteController::class, 'pdfClientes'])->name('reportes.clientes.pdf');
+
+        // PDF de ocupación
+        Route::get('/reportes/ocupacion/pdf', [ReporteController::class, 'pdfOcupacion'])->name('reportes.ocupacion.pdf');
 
 
     });

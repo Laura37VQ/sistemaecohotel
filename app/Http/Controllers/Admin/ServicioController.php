@@ -11,47 +11,88 @@ use Inertia\Inertia;
 
 class ServicioController extends Controller
 {
-    public function index()
+    /* ================================================================
+       LISTADO CON FILTROS
+    ================================================================= */
+    public function index(Request $request)
     {
+        // Filtros recibidos desde Vue
+        $q          = trim($request->query('q', ''));
+        $categoria  = $request->query('categoria', '');
+        $estado     = $request->query('estado', '');
+        $precioMin  = $request->query('precio_min', '');
+        $precioMax  = $request->query('precio_max', '');
+
+        // Construcción dinámica del query
         $servicios = Servicio::with('categoriaServicio')
+
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where(function ($sub) use ($q) {
+                    $sub->where('nombre', 'like', "%$q%")
+                        ->orWhere('descripcion', 'like', "%$q%");
+                });
+            })
+
+            ->when($categoria !== '', fn($query) => $query->where('categoria_id', $categoria))
+
+            ->when($estado !== '', fn($query) => $query->where('estado', $estado))
+
+            ->when($precioMin !== '', fn($query) => $query->where('precio', '>=', $precioMin))
+
+            ->when($precioMax !== '', fn($query) => $query->where('precio', '<=', $precioMax))
+
             ->orderBy('nombre', 'asc')
             ->paginate(10)
-            ->through(function ($servicio) {
+            ->withQueryString()
+
+            ->through(function ($s) {
                 return [
-                    'id' => $servicio->id,
-                    'nombre' => $servicio->nombre,
-                    'descripcion' => $servicio->descripcion,
-                    'precio' => $servicio->precio,
-                    'estado' => $servicio->estado,
-                    'categoria' => $servicio->categoriaServicio?->nombre_categoria ?? 'Sin categoría',
-                    'foto_url' => $servicio->foto ? asset('storage/' . $servicio->foto) : null,
+                    'id' => $s->id,
+                    'nombre' => $s->nombre,
+                    'descripcion' => $s->descripcion,
+                    'precio' => $s->precio,
+                    'estado' => $s->estado,
+                    'categoria' => $s->categoriaServicio?->nombre_categoria ?? 'Sin categoría',
+                    'foto_url' => $s->foto ? asset('storage/' . $s->foto) : null,
                 ];
             });
 
         return Inertia::render('Admin/Servicios/Index', [
-            'servicios' => $servicios,
+            'servicios'  => $servicios,
+            'categorias' => CategoriaServicio::orderBy('nombre_categoria')->get(),
+            'filtros' => [
+                'q'          => $q,
+                'categoria'  => $categoria,
+                'estado'     => $estado,
+                'precio_min' => $precioMin,
+                'precio_max' => $precioMax
+            ]
         ]);
     }
 
+    /* ================================================================
+       FORM – CREAR
+    ================================================================= */
     public function create()
     {
-        $categorias = CategoriaServicio::orderBy('nombre_categoria')->get();
-
         return Inertia::render('Admin/Servicios/Form', [
-            'servicio' => null, // Indica creación
-            'categorias' => $categorias,
+            'servicio'   => null,
+            'categorias' => CategoriaServicio::orderBy('nombre_categoria')->get()
         ]);
     }
 
+    /* ================================================================
+       GUARDAR NUEVO
+    ================================================================= */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'categoria_id' => 'required|exists:categoria_servicios,id',
-            'nombre' => 'required|string|max:100',
-            'descripcion' => 'nullable|string',
-            'precio' => 'required|numeric|min:0',
-            'estado' => 'required|in:Activo,Inactivo',
-            'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'nombre'       => 'required|string|max:100',
+            'descripcion'  => 'nullable|string',
+            'precio'       => 'required|numeric|min:0',
+            'estado'       => 'required|in:Activo,Inactivo',
+            'foto'         => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         if ($request->hasFile('foto')) {
@@ -61,36 +102,40 @@ class ServicioController extends Controller
         Servicio::create($validated);
 
         return redirect()->route('admin.servicios.index')
-            ->with('success', ' Servicio creado correctamente.');
+            ->with('success', 'Servicio creado correctamente.');
     }
 
+    /* ================================================================
+       EDITAR
+    ================================================================= */
     public function edit(Servicio $servicio)
     {
-        $categorias = CategoriaServicio::orderBy('nombre_categoria')->get();
-
         return Inertia::render('Admin/Servicios/Form', [
             'servicio' => [
-                'id' => $servicio->id,
-                'categoria_id' => $servicio->categoria_id,
-                'nombre' => $servicio->nombre,
-                'descripcion' => $servicio->descripcion,
-                'precio' => $servicio->precio,
-                'estado' => $servicio->estado,
-                'foto_url' => $servicio->foto ? asset('storage/' . $servicio->foto) : null,
+                'id'            => $servicio->id,
+                'categoria_id'  => $servicio->categoria_id,
+                'nombre'        => $servicio->nombre,
+                'descripcion'   => $servicio->descripcion,
+                'precio'        => $servicio->precio,
+                'estado'        => $servicio->estado,
+                'foto_url'      => $servicio->foto ? asset('storage/' . $servicio->foto) : null,
             ],
-            'categorias' => $categorias,
+            'categorias' => CategoriaServicio::orderBy('nombre_categoria')->get()
         ]);
     }
 
+    /* ================================================================
+       ACTUALIZAR
+    ================================================================= */
     public function update(Request $request, Servicio $servicio)
     {
         $validated = $request->validate([
             'categoria_id' => 'required|exists:categoria_servicios,id',
-            'nombre' => 'required|string|max:100',
-            'descripcion' => 'nullable|string',
-            'precio' => 'required|numeric|min:0',
-            'estado' => 'required|in:Activo,Inactivo',
-            'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'nombre'       => 'required|string|max:100',
+            'descripcion'  => 'nullable|string',
+            'precio'       => 'required|numeric|min:0',
+            'estado'       => 'required|in:Activo,Inactivo',
+            'foto'         => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         if ($request->hasFile('foto')) {
@@ -103,9 +148,12 @@ class ServicioController extends Controller
         $servicio->update($validated);
 
         return redirect()->route('admin.servicios.index')
-            ->with('success', ' Servicio actualizado correctamente.');
+            ->with('success', 'Servicio actualizado correctamente.');
     }
 
+    /* ================================================================
+       ELIMINAR
+    ================================================================= */
     public function destroy(Servicio $servicio)
     {
         if ($servicio->foto) {
@@ -115,6 +163,6 @@ class ServicioController extends Controller
         $servicio->delete();
 
         return redirect()->route('admin.servicios.index')
-            ->with('success', ' Servicio eliminado correctamente.');
+            ->with('success', 'Servicio eliminado correctamente.');
     }
 }

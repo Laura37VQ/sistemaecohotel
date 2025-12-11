@@ -12,7 +12,9 @@ function toggleSidebar() {
 </script>
 
 <template>
-  <div class="flex h-screen bg-[#F5F7F8] overflow-hidden relative">
+  <!-- CONTENEDOR PRINCIPAL -->
+  <div class="flex min-h-screen bg-[#F5F7F8] overflow-x-auto relative">
+
     <!-- SIDEBAR -->
     <aside
       :class="[
@@ -23,7 +25,7 @@ function toggleSidebar() {
       <Sidebar v-show="sidebarVisible" />
     </aside>
 
-    <!-- BOTÓN FLOTANTE DE MENÚ -->
+    <!-- BOTÓN FLOTANTE DEL MENÚ -->
     <button
       @click="toggleSidebar"
       class="absolute top-1/2 -translate-y-1/2 left-0 z-50 bg-white text-[#2E7D32] shadow-md rounded-r-full p-2 hover:bg-[#FFCE3E] hover:text-black transition"
@@ -54,9 +56,12 @@ function toggleSidebar() {
     <!-- CONTENIDO PRINCIPAL -->
     <div class="flex-1 flex flex-col transition-all duration-300">
       <Navbar />
-      <main class="p-4 overflow-y-auto flex-1">
+
+      <!-- AQUÍ PERMITIMOS SCROLL HORIZONTAL Y VERTICAL -->
+      <main class="p-4 overflow-x-auto overflow-y-auto flex-1">
         <slot />
       </main>
+
       <GlobalAlert />
     </div>
   </div>

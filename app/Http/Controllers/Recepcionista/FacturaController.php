@@ -15,7 +15,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class FacturaController extends Controller
 {
-    /** 🧾 Listar facturas */
+    /** LISTAR FACTURAS */
     public function index()
     {
         $facturas = Factura::with(['cliente:id,nombres,apellidos', 'reserva:id,codigo_reserva'])
@@ -27,21 +27,17 @@ class FacturaController extends Controller
         ]);
     }
 
-    /** ➕ Crear factura manualmente */
+    /** FORMULARIO CREAR */
     public function create()
     {
-        $clientes = User::where('rol_id', 2)->get(['id', 'nombres', 'apellidos']);
-        $reservas = Reserva::whereIn('estado', ['Confirmada', 'Finalizada'])
-            ->get(['id', 'codigo_reserva']);
-
         return Inertia::render('Recepcionista/Facturas/Form', [
             'factura' => null,
-            'clientes' => $clientes,
-            'reservas' => $reservas,
+            'clientes' => User::where('rol_id', 2)->get(['id', 'nombres', 'apellidos']),
+            'reservas' => Reserva::all(['id', 'codigo_reserva']),
         ]);
     }
 
-    /** 💾 Guardar factura */
+    /** GUARDAR FACTURA NUEVA */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -56,9 +52,9 @@ class FacturaController extends Controller
             'total' => 'required|numeric|min:0',
         ]);
 
-        // Generar número consecutivo automático
-        $ultimoNumero = Factura::max('numero_factura') ?? 1000;
-        $data['numero_factura'] = $ultimoNumero + 1;
+        // Número consecutivo
+        $ultimo = Factura::max('numero_factura') ?? 1000;
+        $data['numero_factura'] = $ultimo + 1;
         $data['prefijo'] = 'FV';
 
         Factura::create($data);
@@ -67,20 +63,17 @@ class FacturaController extends Controller
             ->with('success', 'Factura registrada correctamente.');
     }
 
-    /** ✏️ Editar factura */
+    /** EDITAR FACTURA */
     public function edit(Factura $factura)
     {
-        $clientes = User::where('rol_id', 2)->get(['id', 'nombres', 'apellidos']);
-        $reservas = Reserva::get(['id', 'codigo_reserva']);
-
         return Inertia::render('Recepcionista/Facturas/Form', [
             'factura' => $factura,
-            'clientes' => $clientes,
-            'reservas' => $reservas,
+            'clientes' => User::where('rol_id', 2)->get(),
+            'reservas' => Reserva::all(['id', 'codigo_reserva']),
         ]);
     }
 
-    /** 🔁 Actualizar factura */
+    /** ACTUALIZAR FACTURA */
     public function update(Request $request, Factura $factura)
     {
         $data = $request->validate([
@@ -98,23 +91,21 @@ class FacturaController extends Controller
             ->with('success', 'Factura actualizada correctamente.');
     }
 
-    /** 👁️ Mostrar factura con detalles */
+    /** MOSTRAR FACTURA */
     public function show(Factura $factura)
     {
-        $detalles = DetalleFactura::with('servicio:id,nombre,precio')
-            ->where('factura_id', $factura->id)
+        $detalles = DetalleFactura::where('factura_id', $factura->id)
+            ->with('servicio:id,nombre,precio')
             ->get();
-
-        $servicios = Servicio::all(['id', 'nombre', 'precio']);
 
         return Inertia::render('Recepcionista/Facturas/Show', [
             'factura' => $factura->load('cliente'),
             'detalles' => $detalles,
-            'servicios' => $servicios,
+            'servicios' => Servicio::all(),
         ]);
     }
 
-    /** ➕ Agregar detalle */
+    /** AGREGAR DETALLE */
     public function agregarDetalle(Request $request, Factura $factura)
     {
         $data = $request->validate([
@@ -122,69 +113,32 @@ class FacturaController extends Controller
             'cantidad' => 'required|integer|min:1',
             'precio_unitario' => 'required|numeric|min:0',
         ]);
-        // 🔹 Buscar el servicio seleccionado
-        $servicio = \App\Models\Servicio::find($data['servicio_id']);
+
+        $servicio = Servicio::find($data['servicio_id']);
 
         $subtotal = $data['cantidad'] * $data['precio_unitario'];
         $impuesto = round($subtotal * 0.19, 2);
         $total = $subtotal + $impuesto;
 
-        $detalle = new \App\Models\DetalleFactura([
-            'factura_id'     => $factura->id,
-            'servicio_id'     => $servicio->id,
-            'descripcion'    => $servicio->nombre,
-            'cantidad'        => $data['cantidad'],
+        DetalleFactura::create([
+            'factura_id' => $factura->id,
+            'servicio_id' => $servicio->id,
+            'descripcion' => $servicio->nombre,
+            'cantidad' => $data['cantidad'],
             'precio_unitario' => $data['precio_unitario'],
-            'subtotal'       => $subtotal,
-            'impuesto'       => $impuesto,
-            'total'          => $total,
+            'subtotal' => $subtotal,
+            'impuesto' => $impuesto,
+            'total' => $total,
         ]);
 
-        $detalle->save();
-
         $this->recalcularTotales($factura);
 
-        return back()->with('success', 'Servicio agregado a la factura.');
-
+        return back()->with('success', 'Servicio agregado.');
     }
 
-    /** ❌ Eliminar detalle */
-    public function eliminarDetalle(DetalleFactura $detalle)
-    {
-        $factura = $detalle->factura;
-        $detalle->delete();
-
-        $this->recalcularTotales($factura);
-
-        return back()->with('success', 'Detalle eliminado correctamente.');
-    }
-
-    /** 💳 Marcar factura como pagada */
-    public function marcarPagada(Factura $factura)
-    {
-        $factura->update(['estado' => 'Pagada']);
-        return back()->with('success', 'Factura marcada como pagada.');
-    }
-
-    /** 📄 Descargar factura en PDF */
-    public function descargarPDF(Factura $factura)
-    {
-        $hotel = InformacionHotel::first();
-        $cliente = $factura->cliente;
-        $detalles = $factura->detalles()->with('servicio')->get();
-
-        // ✅ Usa la vista correcta según tu archivo real
-        //  resources/views/pdf.blade.php
-        $pdf = Pdf::loadView('factura.pdf', compact('factura', 'hotel', 'cliente', 'detalles'))
-            ->setPaper('a4', 'portrait');
-
-        return $pdf->download("Factura_{$factura->prefijo}_{$factura->numero_factura}.pdf");
-    }
-
-    /** 🔹 Recalcular totales */
     private function recalcularTotales(Factura $factura)
     {
-        $subtotal = $factura->detalles->sum(fn($d) => $d->cantidad * $d->precio_unitario);
+        $subtotal = $factura->detalles->sum('subtotal');
         $impuestos = round($subtotal * 0.19, 2);
         $total = $subtotal + $impuestos;
 
@@ -193,5 +147,20 @@ class FacturaController extends Controller
             'impuestos' => $impuestos,
             'total' => $total,
         ]);
+    }
+
+    /** PDF */
+    public function descargarPDF(Factura $factura)
+    {
+        $hotel = InformacionHotel::first();
+
+        $pdf = Pdf::loadView('factura.pdf', [
+            'factura' => $factura,
+            'hotel' => $hotel,
+            'cliente' => $factura->cliente,
+            'detalles' => $factura->detalles()->with('servicio')->get(),
+        ]);
+
+        return $pdf->download("Factura_{$factura->prefijo}_{$factura->numero_factura}.pdf");
     }
 }
