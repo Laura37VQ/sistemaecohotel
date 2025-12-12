@@ -223,7 +223,7 @@ class ReservaController extends Controller
             $this->generarDetalleAlojamiento($reserva, $reserva->factura, recalc: true);
         }
 
-        // 🔁 En lugar de back(), redirigimos al índice según el rol
+        //  En lugar de back(), redirigimos al índice según el rol
         $user = Auth::user();
         $ruta = $user->rol->nombre_rol === 'Recepcionista'
             ? 'recepcionista.reservas.index'
