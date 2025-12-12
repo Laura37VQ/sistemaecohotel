@@ -25,13 +25,15 @@ class Reserva extends Model
     // Relación con usuario
     public function usuario()
     {
-        return $this->belongsTo(\App\Models\User::class, 'usuario_id');
+        return $this->belongsTo(\App\Models\User::class, 'usuario_id')
+                    ->withTrashed();
     }
 
     // Relación con habitación
     public function habitacion()
     {
-        return $this->belongsTo(\App\Models\Habitacion::class, 'habitacion_id');
+        return $this->belongsTo(\App\Models\Habitacion::class, 'habitacion_id')
+                    ->withTrashed();
     }
 
     // Relación con factura

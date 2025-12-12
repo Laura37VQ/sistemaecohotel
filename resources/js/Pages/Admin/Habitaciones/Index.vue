@@ -3,24 +3,24 @@ import AdminLayout from '@/layouts/AdminLayout.vue'
 import { Head, router } from '@inertiajs/vue3'
 import { ref } from 'vue'
 
-/* ----------------------------------------------
-   Props desde backend (habitaciones + filtros)
----------------------------------------------- */
+/*
+   Recibimos desde el backend:
+   - La lista paginada de habitaciones (incluye activas y desactivadas)
+   - Los filtros anteriores
+*/
 const props = defineProps({
   habitaciones: Object,
   filtros: Object
 })
 
-/* ----------------------------------------------
-   Filtros reactivos
----------------------------------------------- */
+// Filtros reactivos
 const q      = ref(props.filtros.q || "")
 const tipo   = ref(props.filtros.tipo || "")
 const estado = ref(props.filtros.estado || "")
 
-/* ----------------------------------------------
-   Buscar habitaciones con filtros
----------------------------------------------- */
+/*
+   Buscar con filtros aplicados
+*/
 function buscar() {
   router.get("/admin/habitaciones", {
     q: q.value,
@@ -29,9 +29,9 @@ function buscar() {
   }, { preserveState: true })
 }
 
-/* ----------------------------------------------
-   Limpiar filtros
----------------------------------------------- */
+/*
+   Limpiar todos los filtros
+*/
 function limpiar() {
   q.value = ""
   tipo.value = ""
@@ -39,12 +39,27 @@ function limpiar() {
   buscar()
 }
 
-/* ----------------------------------------------
-   Desactivar habitación → pasa a Mantenimiento
----------------------------------------------- */
+/*
+   Desactivar habitación (SoftDelete)
+   Esto hace que desaparezca para el cliente.
+*/
 function desactivar(id) {
-  if (!confirm("¿Desactivar esta habitación?")) return
-  router.put(`/admin/habitaciones/${id}`, { estado: "Mantenimiento" })
+  if (!confirm("¿Desactivar esta habitación? Ya no estará disponible para los clientes.")) return;
+
+  router.delete(`/admin/habitaciones/${id}`, {
+    onSuccess: () => alert("Habitación desactivada correctamente.")
+  })
+}
+
+/*
+   Reactivar habitación que fue desactivada
+*/
+function reactivar(id) {
+  if (!confirm("¿Reactivar esta habitación? Volverá a estar disponible.")) return;
+
+  router.put(`/admin/habitaciones/${id}/restore`, {}, {
+    onSuccess: () => alert("Habitación reactivada correctamente.")
+  })
 }
 </script>
 
@@ -56,7 +71,7 @@ function desactivar(id) {
 
       <!-- Título -->
       <div class="flex justify-between items-center mb-6">
-        <h2 class="text-3xl font-bold text-green-700">Habitaciones</h2>
+        <h2 class="text-3xl font-bold text-green-700">Gestión de Habitaciones</h2>
 
         <a href="/admin/habitaciones/create"
            class="px-5 py-2 bg-green-700 text-white rounded-lg shadow hover:bg-green-800 transition">
@@ -64,12 +79,10 @@ function desactivar(id) {
         </a>
       </div>
 
-      <!-- =======================
-           FILTROS DE BÚSQUEDA
-      ======================== -->
+      <!-- Filtros -->
       <div class="bg-white p-4 rounded-lg shadow mb-6 flex gap-4 flex-wrap">
-
-        <!-- Filtro general -->
+        
+        <!-- Buscar texto -->
         <input
           v-model="q"
           type="text"
@@ -77,7 +90,7 @@ function desactivar(id) {
           class="border px-3 py-2 rounded w-60"
         />
 
-        <!-- Filtro por tipo -->
+        <!-- Tipo -->
         <select v-model="tipo" class="border px-3 py-2 rounded w-48">
           <option value="">Todos los tipos</option>
           <option value="Individual">Individual</option>
@@ -86,7 +99,7 @@ function desactivar(id) {
           <option value="Suite">Suite</option>
         </select>
 
-        <!-- Filtro por estado -->
+        <!-- Estado operativo -->
         <select v-model="estado" class="border px-3 py-2 rounded w-48">
           <option value="">Todos los estados</option>
           <option value="Disponible">Disponible</option>
@@ -94,7 +107,6 @@ function desactivar(id) {
           <option value="Mantenimiento">Mantenimiento</option>
         </select>
 
-        <!-- Botones -->
         <button @click="buscar"
                 class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
           Buscar
@@ -107,9 +119,7 @@ function desactivar(id) {
 
       </div>
 
-      <!-- =======================
-           TABLA DE HABITACIONES
-      ======================== -->
+      <!-- Tabla -->
       <div class="overflow-x-auto">
         <table class="min-w-full bg-white rounded-lg shadow-lg">
           <thead class="bg-green-50 text-left text-gray-700 uppercase tracking-wider">
@@ -121,19 +131,17 @@ function desactivar(id) {
               <th class="px-4 py-3">Estado</th>
               <th class="px-4 py-3">Descripción</th>
               <th class="px-4 py-3">Foto</th>
-              <th class="px-4 py-3">Acciones</th>
+              <th class="px-4 py-3 text-center">Acciones</th>
             </tr>
           </thead>
-          <tbody>
 
-            <!-- Sin habitaciones -->
+          <tbody>
             <tr v-if="!props.habitaciones.data.length">
               <td colspan="8" class="px-4 py-6 text-center text-gray-500 italic">
                 No hay habitaciones registradas.
               </td>
             </tr>
 
-            <!-- Listado -->
             <tr v-for="h in props.habitaciones.data" :key="h.id"
                 class="border-t hover:bg-gray-50">
 
@@ -142,7 +150,7 @@ function desactivar(id) {
               <td class="px-4 py-3">{{ h.capacidad_personas }}</td>
               <td class="px-4 py-3">${{ h.precio }}</td>
 
-              <!-- Estado con colores -->
+              <!-- Estado -->
               <td class="px-4 py-3">
                 <span
                   :class="{
@@ -154,6 +162,11 @@ function desactivar(id) {
                 >
                   {{ h.estado }}
                 </span>
+
+                <div v-if="h.deleted_at"
+                     class="text-red-600 text-xs font-semibold mt-1">
+                  (Desactivada)
+                </div>
               </td>
 
               <td class="px-4 py-3">{{ h.descripcion }}</td>
@@ -164,19 +177,35 @@ function desactivar(id) {
                 <span v-else class="text-gray-400 italic">Sin foto</span>
               </td>
 
-              <td class="px-4 py-3 flex gap-2">
-                <a :href="`/admin/habitaciones/${h.id}/edit`"
-                   class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm">
-                  Editar
-                </a>
+              <!-- ACCIONES -->
+              <td class="px-4 py-3 text-center">
+                <div class="flex flex-col items-center gap-2">
 
-                <button @click="desactivar(h.id)"
-                        class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm">
-                  Desactivar
-                </button>
+                  <!-- Editar -->
+                  <a v-if="!h.deleted_at"
+                     :href="`/admin/habitaciones/${h.id}/edit`"
+                     class="w-24 px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm text-center">
+                    Editar
+                  </a>
+
+                  <!-- Desactivar -->
+                  <button v-if="!h.deleted_at"
+                          @click="desactivar(h.id)"
+                          class="w-24 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm">
+                    Desactivar
+                  </button>
+
+                  <!-- Reactivar -->
+                  <button v-if="h.deleted_at"
+                          @click="reactivar(h.id)"
+                          class="w-24 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm">
+                    Reactivar
+                  </button>
+
+                </div>
               </td>
-            </tr>
 
+            </tr>
           </tbody>
         </table>
       </div>

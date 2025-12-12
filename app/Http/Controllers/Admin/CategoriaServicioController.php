@@ -9,34 +9,25 @@ use Inertia\Inertia;
 
 class CategoriaServicioController extends Controller
 {
-    /* 
+    /* =====================================================
        LISTADO CON FILTROS
-     */
+    ====================================================== */
     public function index(Request $request)
     {
-        // Recibir filtros desde Vue
         $q      = trim((string)$request->query('q', ''));
         $estado = $request->query('estado', '');
 
-        /*
-           Construcción dinámica de la consulta
-         */
         $categorias = CategoriaServicio::query()
-
-            // Buscar por nombre o descripción
             ->when($q !== '', function ($query) use ($q) {
                 $query->where('nombre_categoria', 'like', "%$q%")
                       ->orWhere('descripcion', 'like', "%$q%");
             })
-
-            // Filtrar por estado
             ->when($estado !== '', function ($query) use ($estado) {
                 $query->where('estado', $estado);
             })
-
             ->orderBy('nombre_categoria')
             ->paginate(10)
-            ->withQueryString(); // Mantiene filtros en paginación
+            ->withQueryString();
 
         return Inertia::render('Admin/CategoriasServicios/Index', [
             'categorias' => $categorias,
@@ -47,10 +38,9 @@ class CategoriaServicioController extends Controller
         ]);
     }
 
-    // ---------------------------------------------
-    // RESTO DEL CRUD (no cambia)
-    // ---------------------------------------------
-
+    /* =====================================================
+       CREAR
+    ====================================================== */
     public function create()
     {
         return Inertia::render('Admin/CategoriasServicios/Form', [
@@ -58,12 +48,15 @@ class CategoriaServicioController extends Controller
         ]);
     }
 
+    /* =====================================================
+       GUARDAR
+    ====================================================== */
     public function store(Request $request)
     {
         $request->validate([
             'nombre_categoria' => 'required|string|max:100',
-            'descripcion' => 'nullable|string',
-            'estado' => 'required|in:Activo,Inactivo'
+            'descripcion'      => 'nullable|string',
+            'estado'           => 'required|in:Activo,Inactivo'
         ]);
 
         CategoriaServicio::create($request->all());
@@ -72,24 +65,30 @@ class CategoriaServicioController extends Controller
             ->with('success', 'Categoría creada correctamente.');
     }
 
+    /* =====================================================
+       EDITAR
+    ====================================================== */
     public function edit(CategoriaServicio $categorias_servicio)
     {
         return Inertia::render('Admin/CategoriasServicios/Form', [
             'categoria' => [
-                'id' => $categorias_servicio->id,
-                'nombre_categoria' => $categorias_servicio->nombre_categoria,
-                'descripcion' => $categorias_servicio->descripcion,
-                'estado' => $categorias_servicio->estado,
+                'id'                => $categorias_servicio->id,
+                'nombre_categoria'  => $categorias_servicio->nombre_categoria,
+                'descripcion'       => $categorias_servicio->descripcion,
+                'estado'            => $categorias_servicio->estado,
             ]
         ]);
     }
 
+    /* =====================================================
+       ACTUALIZAR
+    ====================================================== */
     public function update(Request $request, CategoriaServicio $categorias_servicio)
     {
         $request->validate([
             'nombre_categoria' => 'required|string|max:100',
-            'descripcion' => 'nullable|string',
-            'estado' => 'required|in:Activo,Inactivo'
+            'descripcion'      => 'nullable|string',
+            'estado'           => 'required|in:Activo,Inactivo'
         ]);
 
         $categorias_servicio->update($request->all());
@@ -98,9 +97,14 @@ class CategoriaServicioController extends Controller
             ->with('success', 'Categoría actualizada correctamente.');
     }
 
+    /* =====================================================
+       ACTIVAR / INACTIVAR (NO BORRA)
+    ====================================================== */
     public function toggleEstado(CategoriaServicio $categorias_servicio)
     {
-        $nuevoEstado = $categorias_servicio->estado === 'Activo' ? 'Inactivo' : 'Activo';
+        $nuevoEstado = $categorias_servicio->estado === 'Activo'
+            ? 'Inactivo'
+            : 'Activo';
 
         $categorias_servicio->update(['estado' => $nuevoEstado]);
 
@@ -108,11 +112,25 @@ class CategoriaServicioController extends Controller
             ->with('success', 'Estado actualizado correctamente.');
     }
 
+    /* =====================================================
+       ELIMINAR (SOFTDELETE REAL)
+       NO PERMITE BORRAR SI TIENE SERVICIOS ASOCIADOS
+    ====================================================== */
     public function destroy(CategoriaServicio $categorias_servicio)
     {
+        // Verificar si tiene servicios asignados
+        if ($categorias_servicio->servicios()->count() > 0) {
+            return redirect()->route('admin.categorias-servicios.index')
+                ->with('error', 'No se puede eliminar: la categoría tiene servicios asociados.');
+        }
+
+        // Cambiar estado a Inactivo antes de borrar
         $categorias_servicio->update(['estado' => 'Inactivo']);
 
+        // Soft delete
+        $categorias_servicio->delete();
+
         return redirect()->route('admin.categorias-servicios.index')
-            ->with('success', 'Categoría desactivada correctamente.');
+            ->with('success', 'Categoría eliminada (archivada) correctamente.');
     }
 }

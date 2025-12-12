@@ -12,22 +12,64 @@ use App\Models\Servicio;
 use App\Models\DetalleFactura;
 use App\Models\InformacionHotel;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 
 class FacturaController extends Controller
 {
-    /** LISTAR FACTURAS */
-    public function index()
+    /**
+     * Listado de facturas con filtros.
+     * Se permite filtrar por cliente, estado, fecha y búsqueda general.
+     */
+    public function index(Request $request)
     {
+        // Captura de filtros enviados desde Vue
+        $buscar = $request->query('buscar', '');
+        $estado = $request->query('estado', '');
+        $cliente = $request->query('cliente', '');
+        $fecha_inicio = $request->query('fecha_inicio', '');
+        $fecha_fin = $request->query('fecha_fin', '');
+
         $facturas = Factura::with(['cliente:id,nombres,apellidos', 'reserva:id,codigo_reserva'])
+
+            // Búsqueda por número de factura o nombre del cliente
+            ->when($buscar !== '', function ($q) use ($buscar) {
+                $q->where('numero_factura', 'like', "%$buscar%")
+                  ->orWhereHas('cliente', function ($sub) use ($buscar) {
+                      $sub->where('nombres', 'like', "%$buscar%")
+                          ->orWhere('apellidos', 'like', "%$buscar%");
+                  });
+            })
+
+            // Filtrar por estado
+            ->when($estado !== '', fn($q) => $q->where('estado', $estado))
+
+            // Filtrar por cliente
+            ->when($cliente !== '', fn($q) => $q->where('cliente_id', $cliente))
+
+            // Filtrar por fecha de emisión
+            ->when($fecha_inicio !== '', fn($q) => $q->whereDate('fecha_emision', '>=', $fecha_inicio))
+            ->when($fecha_fin !== '', fn($q) => $q->whereDate('fecha_emision', '<=', $fecha_fin))
+
             ->orderByDesc('fecha_emision')
-            ->paginate(10);
+            ->paginate(10)
+            ->withQueryString();
 
         return Inertia::render('Recepcionista/Facturas/Index', [
-            'facturas' => $facturas
+            'facturas' => $facturas,
+            'clientes' => User::where('rol_id', 2)->get(['id','nombres','apellidos']),
+            'filtros' => [
+                'buscar' => $buscar,
+                'estado' => $estado,
+                'cliente' => $cliente,
+                'fecha_inicio' => $fecha_inicio,
+                'fecha_fin' => $fecha_fin,
+            ]
         ]);
     }
 
-    /** FORMULARIO CREAR */
+    /**
+     * Formulario de creación de factura.
+     */
     public function create()
     {
         return Inertia::render('Recepcionista/Facturas/Form', [
@@ -37,7 +79,9 @@ class FacturaController extends Controller
         ]);
     }
 
-    /** GUARDAR FACTURA NUEVA */
+    /**
+     * Guarda una factura nueva.
+     */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -52,7 +96,7 @@ class FacturaController extends Controller
             'total' => 'required|numeric|min:0',
         ]);
 
-        // Número consecutivo
+        // Generación del número consecutivo
         $ultimo = Factura::max('numero_factura') ?? 1000;
         $data['numero_factura'] = $ultimo + 1;
         $data['prefijo'] = 'FV';
@@ -63,7 +107,9 @@ class FacturaController extends Controller
             ->with('success', 'Factura registrada correctamente.');
     }
 
-    /** EDITAR FACTURA */
+    /**
+     * Formulario de edición.
+     */
     public function edit(Factura $factura)
     {
         return Inertia::render('Recepcionista/Facturas/Form', [
@@ -73,7 +119,9 @@ class FacturaController extends Controller
         ]);
     }
 
-    /** ACTUALIZAR FACTURA */
+    /**
+     * Actualiza una factura existente.
+     */
     public function update(Request $request, Factura $factura)
     {
         $data = $request->validate([
@@ -91,7 +139,9 @@ class FacturaController extends Controller
             ->with('success', 'Factura actualizada correctamente.');
     }
 
-    /** MOSTRAR FACTURA */
+    /**
+     * Muestra una factura con todos sus detalles.
+     */
     public function show(Factura $factura)
     {
         $detalles = DetalleFactura::where('factura_id', $factura->id)
@@ -105,7 +155,9 @@ class FacturaController extends Controller
         ]);
     }
 
-    /** AGREGAR DETALLE */
+    /**
+     * Agrega un detalle a la factura.
+     */
     public function agregarDetalle(Request $request, Factura $factura)
     {
         $data = $request->validate([
@@ -136,9 +188,28 @@ class FacturaController extends Controller
         return back()->with('success', 'Servicio agregado.');
     }
 
+    /**
+     * Elimina un detalle de una factura
+     * y recalcula los totales.
+     */
+    public function eliminarDetalle(DetalleFactura $detalle)
+    {
+        DB::transaction(function () use ($detalle) {
+            $factura = $detalle->factura;
+            $detalle->delete();
+
+            $this->recalcularTotales($factura);
+        });
+
+        return back()->with('success', 'Detalle eliminado correctamente.');
+    }
+
+    /**
+     * Método interno: recalcula los totales de la factura.
+     */
     private function recalcularTotales(Factura $factura)
     {
-        $subtotal = $factura->detalles->sum('subtotal');
+        $subtotal = $factura->detalles()->sum('subtotal');
         $impuestos = round($subtotal * 0.19, 2);
         $total = $subtotal + $impuestos;
 
@@ -149,7 +220,9 @@ class FacturaController extends Controller
         ]);
     }
 
-    /** PDF */
+    /**
+     * Descarga en PDF la factura.
+     */
     public function descargarPDF(Factura $factura)
     {
         $hotel = InformacionHotel::first();

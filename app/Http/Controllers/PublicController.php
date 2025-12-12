@@ -12,7 +12,6 @@ class PublicController extends Controller
     public function home()
     {
         $habitaciones = Habitacion::where('estado', 'Disponible')
-            ->take(6)
             ->get(['id', 'numero_habitacion', 'tipo', 'descripcion', 'precio', 'foto']);
 
         $categorias = CategoriaServicio::with(['servicios' => function ($q) {

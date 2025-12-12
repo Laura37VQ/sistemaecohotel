@@ -51,11 +51,40 @@ Route::middleware(['auth'])->group(function () {
     // --- ADMIN ---
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('usuarios', UsuarioController::class)->except(['show']);
+
+
+        // CRUD habitaciones
         Route::resource('habitaciones', HabitacionController::class)->except(['show']);
+
+        Route::put('habitaciones/{id}/restore', [HabitacionController::class, 'restore'])
+            ->name('habitaciones.restore');
+
         Route::resource('servicios', ServicioController::class);
+
+        Route::patch('servicios/{servicio}/toggle', 
+            [ServicioController::class, 'toggleEstado']
+        )->name('servicios.toggle');
+
         Route::resource('categorias-servicios', CategoriaServicioController::class);
+
+        // Activar / inactivar categoría
+        Route::patch('categorias-servicios/{categorias_servicio}/toggle',
+            [CategoriaServicioController::class, 'toggleEstado']
+        )->name('categorias-servicios.toggle'); 
+
+        // Eliminar (SoftDelete)
+        Route::delete('categorias-servicios/{categoria}', 
+            [CategoriaServicioController::class, 'destroy']
+        )->name('categorias-servicios.destroy');
+
+
         Route::resource('roles', RolController::class)->except(['show']);
         Route::resource('reservas', ReservaController::class)->except(['show']);
+
+        Route::patch('reservas/{reserva}/estado', 
+            [ReservaController::class, 'actualizarEstado']
+        )->name('reservas.estado');
+        
 
         // Información del hotel
         Route::get('informacion-hotel', [InformacionHotelController::class, 'index'])->name('informacion-hotel.index');
@@ -124,7 +153,9 @@ Route::middleware(['auth'])->group(function () {
         
         //  Detalles (servicios adicionales)
         Route::post('facturas/{factura}/detalles', [FacturaController::class, 'agregarDetalle'])->name('facturas.detalles.agregar');
-        Route::delete('facturas/detalles/{detalle}', [FacturaController::class, 'eliminarDetalle'])->name('facturas.detalles.eliminar');
+        Route::delete('facturas/detalles/{detalle}',
+            [\App\Http\Controllers\Recepcionista\DetalleFacturaController::class, 'destroy']
+        )->name('facturas.detalles.eliminar');
         
         //  Acciones de control
         Route::post('facturas/{factura}/pagar', [FacturaController::class, 'marcarPagada'])->name('facturas.pagar');
@@ -164,6 +195,9 @@ Route::middleware(['auth'])->group(function () {
         
         // Cancelar reserva
         Route::delete('/reservas/{reserva}', [ClienteController::class, 'cancelarReserva'])->name('reservas.cancelar');
+
+        Route::get('/cliente/servicios', [ClienteController::class, 'servicios'])
+            ->name('cliente.servicios');
     });
 
 });

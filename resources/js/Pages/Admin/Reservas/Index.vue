@@ -34,10 +34,19 @@ function limpiar() {
   buscar()
 }
 
-// Cancelar reserva
+// Cancelar reserva (VERSIÓN CORREGIDA)
 function cancelar(id) {
   if (!confirm('¿Cancelar esta reserva?')) return
-  router.put(`/admin/reservas/${id}`, { estado: 'Cancelada' })
+
+  router.patch(`/admin/reservas/${id}/estado`, {
+    estado: 'Cancelada'
+  }, {
+    preserveScroll: true,
+    onSuccess: () => {
+      // RECARGAR LISTADO COMPLETO
+      router.get('/admin/reservas')
+    }
+  })
 }
 </script>
 

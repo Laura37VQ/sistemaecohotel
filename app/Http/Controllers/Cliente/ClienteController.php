@@ -98,11 +98,11 @@ class ClienteController extends Controller
     }
 
     //  Servicios disponibles
-    public function servicios($id)
+    public function servicios()
     {
-        $reserva = Reserva::where('id', $id)
-            ->where('usuario_id', Auth::id())
-            ->whereNull('deleted_at')
+        $reserva = Reserva::where('usuario_id', Auth::id())
+            ->where('estado', 'Confirmada')
+            ->orderByDesc('created_at')
             ->first();
             
         //  Si no hay reserva válida, mostrar mensaje informativo
@@ -284,9 +284,60 @@ class ClienteController extends Controller
             'descripcion' => 'nullable|string'
         ]);
 
-        $reserva->update($request->only(['fecha_ingreso', 'fecha_salida', 'descripcion']));
+        $reserva->update($request->only([
+            'fecha_ingreso',
+            'fecha_salida',
+            'descripcion'
+        ]));
 
-        return redirect()->route('cliente.reservas')->with('success', 'Reserva actualizada correctamente.');
+        $this->actualizarFactura($reserva);
+
+        return redirect()->route('cliente.reservas')
+            ->with('success', 'Reserva actualizada correctamente.');
+    }
+
+
+    private function actualizarFactura(Reserva $reserva)
+    {
+        
+        // Buscar factura asociada
+        $factura = Factura::where('reserva_id', $reserva->id)->first();
+        
+        if (!$factura) {
+            return;
+        }
+        
+        // Calcular nuevas noches
+        $fechaIngreso = new \DateTime($reserva->fecha_ingreso);
+        $fechaSalida = new \DateTime($reserva->fecha_salida);
+        $noches = max($fechaIngreso->diff($fechaSalida)->days, 1);
+        
+        $precioHabitacion = $reserva->habitacion->precio;
+        
+        DetalleFactura::where('factura_id', $factura->id)
+            ->where('descripcion', 'like', 'Alojamiento%')
+            ->delete();
+            
+        DetalleFactura::create([
+            'factura_id' => $factura->id,
+            'descripcion' => 'Alojamiento en habitación ' . $reserva->habitacion->tipo,
+            'cantidad' => $noches,
+            'precio_unitario' => $precioHabitacion,
+            'subtotal' => $precioHabitacion * $noches,
+            'impuesto' => ($precioHabitacion * $noches) * 0.19,
+            'total' => ($precioHabitacion * $noches) * 1.19,
+        ]);
+        
+        $subtotal = DetalleFactura::where('factura_id', $factura->id)->sum('subtotal');
+        $impuestos = $subtotal * 0.19;
+        $total = $subtotal + $impuestos;
+        
+        $factura->update([
+            'subtotal' => $subtotal,
+            'impuestos' => $impuestos,
+            'total' => $total,
+            'fecha_emision' => now(),
+        ]);
     }
 
     //  Cancelar una reserva y anular su factura asociada
@@ -319,6 +370,31 @@ class ClienteController extends Controller
         
         return redirect()->route('cliente.reservas')
             ->with('success', 'Reserva cancelada correctamente. La factura fue anulada.');
+    }
+
+    public function serviciosActivos()
+    {
+        $reserva = Reserva::where('usuario_id', Auth::id())
+            ->where('estado', 'Confirmada')
+            ->where('fecha_salida', '>=', now())
+            ->orderByDesc('fecha_ingreso')
+            ->first();
+            
+        if (!$reserva) {
+            return Inertia::render('Cliente/Servicios', [
+                'reserva' => null,
+                'servicios' => [],
+                'error' => 'No tienes una reserva activa en este momento.'
+            ]);
+        }
+        
+        $servicios = Servicio::where('estado', 'Activo')->get();
+        
+        return Inertia::render('Cliente/Servicios', [
+            'reserva' => $reserva,
+            'servicios' => $servicios,
+            'error' => null
+        ]);
     }
 
 }

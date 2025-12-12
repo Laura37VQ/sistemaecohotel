@@ -16,14 +16,12 @@ class ServicioController extends Controller
     ================================================================= */
     public function index(Request $request)
     {
-        // Filtros recibidos desde Vue
         $q          = trim($request->query('q', ''));
         $categoria  = $request->query('categoria', '');
         $estado     = $request->query('estado', '');
         $precioMin  = $request->query('precio_min', '');
         $precioMax  = $request->query('precio_max', '');
 
-        // Construcción dinámica del query
         $servicios = Servicio::with('categoriaServicio')
 
             ->when($q !== '', function ($query) use ($q) {
@@ -47,25 +45,27 @@ class ServicioController extends Controller
 
             ->through(function ($s) {
                 return [
-                    'id' => $s->id,
-                    'nombre' => $s->nombre,
+                    'id'        => $s->id,
+                    'nombre'    => $s->nombre,
                     'descripcion' => $s->descripcion,
-                    'precio' => $s->precio,
-                    'estado' => $s->estado,
+                    'precio'    => $s->precio,
+                    'estado'    => $s->estado,
                     'categoria' => $s->categoriaServicio?->nombre_categoria ?? 'Sin categoría',
-                    'foto_url' => $s->foto ? asset('storage/' . $s->foto) : null,
+                    'foto_url'  => $s->foto ? asset('storage/' . $s->foto) : null,
                 ];
             });
 
         return Inertia::render('Admin/Servicios/Index', [
             'servicios'  => $servicios,
-            'categorias' => CategoriaServicio::orderBy('nombre_categoria')->get(),
+            'categorias' => CategoriaServicio::where('estado', 'Activo')
+                                ->orderBy('nombre_categoria')
+                                ->get(),
             'filtros' => [
                 'q'          => $q,
                 'categoria'  => $categoria,
                 'estado'     => $estado,
                 'precio_min' => $precioMin,
-                'precio_max' => $precioMax
+                'precio_max' => $precioMax,
             ]
         ]);
     }
@@ -77,7 +77,9 @@ class ServicioController extends Controller
     {
         return Inertia::render('Admin/Servicios/Form', [
             'servicio'   => null,
-            'categorias' => CategoriaServicio::orderBy('nombre_categoria')->get()
+            'categorias' => CategoriaServicio::where('estado', 'Activo')
+                                ->orderBy('nombre_categoria')
+                                ->get()
         ]);
     }
 
@@ -112,15 +114,17 @@ class ServicioController extends Controller
     {
         return Inertia::render('Admin/Servicios/Form', [
             'servicio' => [
-                'id'            => $servicio->id,
-                'categoria_id'  => $servicio->categoria_id,
-                'nombre'        => $servicio->nombre,
-                'descripcion'   => $servicio->descripcion,
-                'precio'        => $servicio->precio,
-                'estado'        => $servicio->estado,
-                'foto_url'      => $servicio->foto ? asset('storage/' . $servicio->foto) : null,
+                'id'           => $servicio->id,
+                'categoria_id' => $servicio->categoria_id,
+                'nombre'       => $servicio->nombre,
+                'descripcion'  => $servicio->descripcion,
+                'precio'       => $servicio->precio,
+                'estado'       => $servicio->estado,
+                'foto_url'     => $servicio->foto ? asset('storage/' . $servicio->foto) : null,
             ],
-            'categorias' => CategoriaServicio::orderBy('nombre_categoria')->get()
+            'categorias' => CategoriaServicio::where('estado', 'Activo')
+                                ->orderBy('nombre_categoria')
+                                ->get()
         ]);
     }
 
@@ -149,6 +153,18 @@ class ServicioController extends Controller
 
         return redirect()->route('admin.servicios.index')
             ->with('success', 'Servicio actualizado correctamente.');
+    }
+
+    /* ================================================================
+       ACTIVAR / DESACTIVAR (NO BORRA)
+    ================================================================= */
+    public function toggleEstado(Servicio $servicio)
+    {
+        $nuevo = $servicio->estado === 'Activo' ? 'Inactivo' : 'Activo';
+
+        $servicio->update(['estado' => $nuevo]);
+
+        return redirect()->back()->with('success', 'Estado actualizado correctamente.');
     }
 
     /* ================================================================

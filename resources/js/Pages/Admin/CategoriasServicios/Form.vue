@@ -1,6 +1,6 @@
 <script setup>
 import AdminLayout from '@/layouts/AdminLayout.vue'
-import { Head, useForm } from '@inertiajs/vue3'
+import { Head, useForm, router } from '@inertiajs/vue3'
 import { computed, watch } from 'vue'
 
 // Props desde el controlador
@@ -11,8 +11,8 @@ const props = defineProps({
   }
 })
 
-// 
-const editando = computed(() => props.categoria !== null && props.categoria.id !== undefined)
+// Saber si se está editando
+const editando = computed(() => !!props.categoria?.id)
 
 // Formulario reactivo
 const form = useForm({
@@ -21,7 +21,7 @@ const form = useForm({
   estado: props.categoria?.estado || 'Activo'
 })
 
-// Mantener el formulario actualizado si cambia la prop
+// Si cambia la categoría, actualizar el form
 watch(
   () => props.categoria,
   (newVal) => {
@@ -34,33 +34,24 @@ watch(
   { immediate: true }
 )
 
-// URL dinámica para POST o PUT
+// URL dinámica para PUT o POST
 const actionUrl = computed(() =>
   editando.value
     ? `/admin/categorias-servicios/${props.categoria.id}`
     : '/admin/categorias-servicios'
 )
 
-// Submit del formulario
+// Enviar formulario
 function submit() {
   if (editando.value) {
-    // Editar → PUT usando FormData
-    form.transform((data) => {
-      const fd = new FormData()
-      Object.entries(data).forEach(([key, value]) => fd.append(key, value))
-      fd.append('_method', 'PUT')
-      return fd
-    })
-
-    form.post(actionUrl.value, {
-      onSuccess: () => window.location.href = '/admin/categorias-servicios',
-      onError: (errors) => console.error(errors)
+    // EDITAR → PUT
+    form.put(actionUrl.value, {
+      onSuccess: () => router.visit('/admin/categorias-servicios')
     })
   } else {
-    // Crear → POST normal
+    // CREAR → POST
     form.post(actionUrl.value, {
-      onSuccess: () => window.location.href = '/admin/categorias-servicios',
-      onError: (errors) => console.error(errors)
+      onSuccess: () => router.visit('/admin/categorias-servicios')
     })
   }
 }

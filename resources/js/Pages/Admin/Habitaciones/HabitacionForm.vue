@@ -31,7 +31,8 @@ const localErrors = reactive({
   numero_habitacion: '',
   capacidad_personas: '',
   precio: '',
-  descripcion: ''
+  descripcion: '',
+  foto: ''   // ← AÑADIDO
 })
 
 // Actualizar form si cambian las props (editar)
@@ -51,17 +52,18 @@ watch(
   { immediate: true }
 )
 
-// Limpiar errores automáticamente al escribir
+// Limpiar errores al escribir
 watch(() => form.numero_habitacion, val => { if (val.trim()) localErrors.numero_habitacion = '' })
 watch(() => form.capacidad_personas, val => { if (val) localErrors.capacidad_personas = '' })
 watch(() => form.precio, val => { if (val) localErrors.precio = '' })
 watch(() => form.descripcion, val => { if (val.trim()) localErrors.descripcion = '' })
 
-// Manejar subida de foto y vista previa
+// Manejar subida de foto
 function handleFileChange(e) {
   const file = e.target.files[0]
   form.foto = file
   preview.value = file ? URL.createObjectURL(file) : null
+  localErrors.foto = ''   // ← limpia error
 }
 
 // Validación local
@@ -71,13 +73,15 @@ function validateForm() {
   localErrors.precio = form.precio ? '' : 'El precio es obligatorio'
   localErrors.descripcion = form.descripcion.trim() ? '' : 'La descripción es obligatoria'
 
-  return !localErrors.numero_habitacion &&
-         !localErrors.capacidad_personas &&
-         !localErrors.precio &&
-         !localErrors.descripcion
+  // FOTO → obligatoria solo al crear
+  if (!props.habitacion && !form.foto) {
+    localErrors.foto = 'Debe subir una imagen de la habitación'
+  }
+
+  return Object.values(localErrors).every(err => err === '')
 }
 
-//  Enviar formulario (corregido)
+// Enviar formulario
 function submit() {
   if (!validateForm()) return
 
@@ -92,13 +96,11 @@ function submit() {
     : '/admin/habitaciones'
 
   if (props.habitacion) {
-    //  ACTUALIZAR con FormData y _method=PUT
+    // Actualizar con FormData
     form.transform((data) => {
       const fd = new FormData()
       Object.entries(data).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
-          fd.append(key, value)
-        }
+        if (value !== null && value !== undefined) fd.append(key, value)
       })
       fd.append('_method', 'PUT')
       return fd
@@ -106,26 +108,19 @@ function submit() {
 
     form.post(url, {
       onSuccess: () => {
-        alert(' Habitación actualizada correctamente.')
+        alert('Habitación actualizada correctamente.')
         window.location.href = '/admin/habitaciones'
-      },
-      onError: (errors) => {
-        console.error(errors)
-        alert(' Error al actualizar la habitación.')
-      },
+      }
     })
+
   } else {
-    //  CREAR
+    // Crear
     form.post(url, {
       forceFormData: true,
       onSuccess: () => {
-        alert(' Habitación creada correctamente.')
+        alert('Habitación creada correctamente.')
         window.location.href = '/admin/habitaciones'
-      },
-      onError: (errors) => {
-        console.error(errors)
-        alert(' Error al crear la habitación.')
-      },
+      }
     })
   }
 }
@@ -133,8 +128,10 @@ function submit() {
 
 <template>
   <Head :title="props.habitacion ? 'Editar Habitación' : 'Crear Habitación'" />
+
   <AdminLayout>
     <div class="p-6 max-w-2xl mx-auto bg-white rounded-lg shadow-lg">
+
       <h2 class="text-2xl font-bold mb-6 text-[#2E7D32]">
         {{ props.habitacion ? 'Editar Habitación' : 'Crear Habitación' }}
       </h2>
@@ -174,8 +171,8 @@ function submit() {
               :class="['w-full border p-2 rounded shadow-sm', (localErrors.capacidad_personas || form.errors.capacidad_personas) ? 'border-red-500' : 'border-gray-300']"
             />
             <p v-if="localErrors.capacidad_personas" class="text-red-600 text-sm mt-1">{{ localErrors.capacidad_personas }}</p>
-            <p v-if="form.errors.capacidad_personas" class="text-red-600 text-sm mt-1">{{ form.errors.capacidad_personas }}</p>
           </div>
+
           <div>
             <label class="block text-sm font-medium mb-1">Precio</label>
             <input 
@@ -185,7 +182,6 @@ function submit() {
               :class="['w-full border p-2 rounded shadow-sm', (localErrors.precio || form.errors.precio) ? 'border-red-500' : 'border-gray-300']"
             />
             <p v-if="localErrors.precio" class="text-red-600 text-sm mt-1">{{ localErrors.precio }}</p>
-            <p v-if="form.errors.precio" class="text-red-600 text-sm mt-1">{{ form.errors.precio }}</p>
           </div>
         </div>
 
@@ -196,7 +192,6 @@ function submit() {
             <option>Disponible</option>
             <option>Ocupada</option>
             <option>Mantenimiento</option>
-            <option>Inactivo</option>
           </select>
         </div>
 
@@ -208,25 +203,28 @@ function submit() {
             :class="['w-full border p-2 rounded shadow-sm', (localErrors.descripcion || form.errors.descripcion) ? 'border-red-500' : 'border-gray-300']"
           ></textarea>
           <p v-if="localErrors.descripcion" class="text-red-600 text-sm mt-1">{{ localErrors.descripcion }}</p>
-          <p v-if="form.errors.descripcion" class="text-red-600 text-sm mt-1">{{ form.errors.descripcion }}</p>
         </div>
 
         <!-- Foto -->
         <div>
-          <label class="block text-sm font-medium mb-1">Foto actual</label>
+          <label class="block text-sm font-medium mb-1">Foto</label>
+
+          <!-- Foto actual en edición -->
           <div v-if="props.habitacion && props.habitacion.foto" class="mb-2">
             <img :src="`/storage/${props.habitacion.foto}`" class="w-48 h-32 object-cover rounded shadow-sm" />
           </div>
 
-          <label class="block text-sm font-medium mt-2 mb-1">Subir nueva foto</label>
           <input type="file" @change="handleFileChange" accept="image/*" class="w-full border p-2 rounded shadow-sm border-gray-300"/>
 
+          <!-- Error si foto no se sube al crear -->
+          <p v-if="localErrors.foto" class="text-red-600 text-sm mt-1">{{ localErrors.foto }}</p>
+          <p v-if="form.errors.foto" class="text-red-600 text-sm mt-1">{{ form.errors.foto }}</p>
+
+          <!-- Vista previa -->
           <div v-if="preview" class="mt-3">
             <p class="text-sm text-gray-600 mb-1">Vista previa:</p>
             <img :src="preview" class="w-48 h-32 object-cover rounded shadow-sm" />
           </div>
-
-          <p v-if="form.errors.foto" class="text-red-600 text-sm mt-1">{{ form.errors.foto }}</p>
         </div>
 
         <!-- Botones -->

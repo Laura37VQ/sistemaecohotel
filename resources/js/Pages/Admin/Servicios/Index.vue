@@ -38,12 +38,18 @@ function limpiar() {
   buscar()
 }
 
-// Cambiar estado
-function toggleEstado(id, estadoActual) {
-  const nuevo = estadoActual === 'Activo' ? 'Inactivo' : 'Activo'
-  if (!confirm(`¿Deseas cambiar el estado a ${nuevo}?`)) return
+// Cambiar estado del servicio
+function toggleEstado(id) {
+  if (!confirm("¿Deseas cambiar el estado de este servicio?")) return;
 
-  router.put(`/admin/servicios/${id}`, { estado: nuevo }, { preserveScroll: true })
+  router.patch(`/admin/servicios/${id}/toggle`, {}, {
+    onSuccess: () => {
+      router.get('/admin/servicios', {}, {
+        preserveState: true,
+        preserveScroll: true
+      })
+    }
+  })
 }
 
 // Formatear precio
@@ -74,12 +80,19 @@ function formatearPrecio(precio) {
       <!-- FILTROS -->
       <div class="bg-white p-4 rounded-lg shadow mb-6 flex gap-4 flex-wrap">
 
-        <input v-model="q" type="text" placeholder="Buscar servicio..."
-               class="border px-3 py-2 rounded w-60" />
+        <input 
+          v-model="q" 
+          type="text" 
+          placeholder="Buscar servicio..."
+          class="border px-3 py-2 rounded w-60"
+        />
 
         <select v-model="categoria" class="border px-3 py-2 rounded w-48">
           <option value="">Todas las categorías</option>
-          <option v-for="c in categorias" :value="c.id" :key="c.id">
+          <option 
+            v-for="c in categorias" 
+            :value="c.id" 
+            :key="c.id">
             {{ c.nombre_categoria }}
           </option>
         </select>
@@ -90,11 +103,19 @@ function formatearPrecio(precio) {
           <option value="Inactivo">Inactivos</option>
         </select>
 
-        <input v-model="precioMin" type="number" placeholder="Precio mínimo"
-               class="border px-3 py-2 rounded w-40" />
+        <input 
+          v-model="precioMin" 
+          type="number" 
+          placeholder="Precio mínimo"
+          class="border px-3 py-2 rounded w-40"
+        />
 
-        <input v-model="precioMax" type="number" placeholder="Precio máximo"
-               class="border px-3 py-2 rounded w-40" />
+        <input 
+          v-model="precioMax" 
+          type="number" 
+          placeholder="Precio máximo"
+          class="border px-3 py-2 rounded w-40"
+        />
 
         <button @click="buscar"
                 class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
@@ -124,24 +145,34 @@ function formatearPrecio(precio) {
           </thead>
 
           <tbody>
-            <tr v-for="s in servicios.data" :key="s.id"
-                :class="[
-                  s.estado === 'Inactivo' ? 'bg-red-50 text-gray-600' : 'hover:bg-gray-50',
-                  'border-b'
-                ]">
+            <tr 
+              v-for="s in servicios.data" 
+              :key="s.id"
+              :class="[
+                s.estado === 'Inactivo' ? 'bg-red-50 text-gray-600' : 'hover:bg-gray-50',
+                'border-b'
+              ]"
+            >
 
               <!-- FOTO -->
               <td class="px-4 py-3 text-center">
-                <img v-if="s.foto_url" :src="s.foto_url"
-                     class="w-20 h-20 object-cover rounded-lg mx-auto" />
+                <img 
+                  v-if="s.foto_url"
+                  :src="s.foto_url"
+                  class="w-20 h-20 object-cover rounded-lg mx-auto" 
+                />
                 <span v-else class="text-gray-400 italic">Sin foto</span>
               </td>
 
               <!-- CATEGORÍA -->
-              <td class="px-4 py-3 font-medium">{{ s.categoria }}</td>
+              <td class="px-4 py-3 font-medium">
+                {{ s.categoria }}
+              </td>
 
               <!-- NOMBRE -->
-              <td class="px-4 py-3 font-semibold">{{ s.nombre }}</td>
+              <td class="px-4 py-3 font-semibold">
+                {{ s.nombre }}
+              </td>
 
               <!-- DESCRIPCIÓN -->
               <td class="px-4 py-3 whitespace-pre-wrap break-words">
@@ -149,11 +180,15 @@ function formatearPrecio(precio) {
               </td>
 
               <!-- PRECIO -->
-              <td class="px-4 py-3">{{ formatearPrecio(s.precio) }}</td>
+              <td class="px-4 py-3">
+                {{ formatearPrecio(s.precio) }}
+              </td>
 
               <!-- ESTADO -->
-              <td class="px-4 py-3 text-center"
-                  :class="s.estado === 'Activo' ? 'text-green-600' : 'text-red-600'">
+              <td 
+                class="px-4 py-3 text-center"
+                :class="s.estado === 'Activo' ? 'text-green-600' : 'text-red-600'"
+              >
                 {{ s.estado }}
               </td>
 
@@ -161,16 +196,19 @@ function formatearPrecio(precio) {
               <td class="px-4 py-3 text-center">
                 <div class="flex justify-center gap-2">
 
-                  <a :href="`/admin/servicios/${s.id}/edit`"
-                     class="px-4 py-1.5 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-sm">
+                  <a 
+                    :href="`/admin/servicios/${s.id}/edit`"
+                    class="px-4 py-1.5 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-sm">
                     Editar
                   </a>
 
-                  <button @click="toggleEstado(s.id, s.estado)"
-                          :class="s.estado === 'Activo'
-                            ? 'bg-red-500 hover:bg-red-600'
-                            : 'bg-green-600 hover:bg-green-700'"
-                          class="px-4 py-1.5 text-white rounded-lg text-sm">
+                  <button 
+                    @click="toggleEstado(s.id)"
+                    :class="s.estado === 'Activo'
+                      ? 'bg-red-500 hover:bg-red-600'
+                      : 'bg-green-600 hover:bg-green-700'"
+                    class="px-4 py-1.5 text-white rounded-lg text-sm"
+                  >
                     {{ s.estado === 'Activo' ? 'Desactivar' : 'Reactivar' }}
                   </button>
 
@@ -184,15 +222,17 @@ function formatearPrecio(precio) {
 
       <!-- PAGINACIÓN -->
       <div class="mt-6 flex justify-between">
-        <button v-if="servicios.prev_page_url"
-                @click="router.get(servicios.prev_page_url)"
-                class="px-4 py-2 border rounded">
+        <button 
+          v-if="servicios.prev_page_url"
+          @click="router.get(servicios.prev_page_url)"
+          class="px-4 py-2 border rounded">
           ← Anterior
         </button>
 
-        <button v-if="servicios.next_page_url"
-                @click="router.get(servicios.next_page_url)"
-                class="px-4 py-2 border rounded">
+        <button 
+          v-if="servicios.next_page_url"
+          @click="router.get(servicios.next_page_url)"
+          class="px-4 py-2 border rounded">
           Siguiente →
         </button>
       </div>

@@ -28,15 +28,25 @@ function limpiar() {
   buscar()
 }
 
-// Cambiar estado
-function toggleEstado(id, estadoActual) {
-  const nuevo = estadoActual === 'Activo' ? 'Inactivo' : 'Activo'
-  if (!confirm(`¿Desea cambiar el estado a ${nuevo}?`)) return
+/*
+  Cambiar estado de categoría
+  → Ahora llama correctamente a:
+    PATCH /admin/categorias-servicios/{id}/toggle
+*/
+function toggleEstado(id) {
+  if (!confirm("¿Desea cambiar el estado de esta categoría?")) return;
 
-  router.put(`/admin/categorias-servicios/${id}`, { estado: nuevo }, {
-    preserveScroll: true
+  router.patch(`/admin/categorias-servicios/${id}/toggle`, {}, {
+    onSuccess: () => {
+      // Recargar lista completa
+      router.get('/admin/categorias-servicios', {}, {
+        preserveState: true,
+        preserveScroll: true
+      })
+    }
   })
 }
+
 </script>
 
 <template>
@@ -58,8 +68,12 @@ function toggleEstado(id, estadoActual) {
       <!-- Filtros -->
       <div class="bg-white p-4 rounded-lg shadow mb-6 flex gap-4 flex-wrap">
 
-        <input v-model="q" type="text" placeholder="Buscar..."
-               class="border px-3 py-2 rounded w-60" />
+        <input 
+          v-model="q" 
+          type="text" 
+          placeholder="Buscar..." 
+          class="border px-3 py-2 rounded w-60" 
+        />
 
         <select v-model="estado" class="border px-3 py-2 rounded w-48">
           <option value="">Todos los estados</option>
@@ -82,6 +96,7 @@ function toggleEstado(id, estadoActual) {
       <!-- TABLA -->
       <div class="overflow-x-auto">
         <table class="min-w-full bg-white rounded-lg shadow-lg overflow-hidden">
+          
           <thead class="bg-green-50 text-left uppercase">
             <tr>
               <th class="px-4 py-3">Nombre</th>
@@ -98,15 +113,17 @@ function toggleEstado(id, estadoActual) {
               </td>
             </tr>
 
-            <tr v-for="cat in props.categorias.data" :key="cat.id" class="border-t hover:bg-gray-50">
+            <tr v-for="cat in props.categorias.data" :key="cat.id" 
+                class="border-t hover:bg-gray-50">
+
               <td class="px-4 py-3">{{ cat.nombre_categoria }}</td>
               <td class="px-4 py-3">{{ cat.descripcion || 'Sin descripción' }}</td>
 
               <td class="px-4 py-3">
                 <span :class="{
-                    'px-3 py-1 rounded-full text-white text-sm font-semibold': true,
-                    'bg-green-500': cat.estado === 'Activo',
-                    'bg-red-500': cat.estado === 'Inactivo'
+                  'px-3 py-1 rounded-full text-white text-sm font-semibold': true,
+                  'bg-green-500': cat.estado === 'Activo',
+                  'bg-red-500': cat.estado === 'Inactivo'
                 }">
                   {{ cat.estado }}
                 </span>
@@ -114,16 +131,20 @@ function toggleEstado(id, estadoActual) {
 
               <td class="px-4 py-3 flex gap-2">
 
+                <!-- Editar -->
                 <a :href="`/admin/categorias-servicios/${cat.id}/edit`"
                    class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm">
                   Editar
                 </a>
 
-                <button @click="toggleEstado(cat.id, cat.estado)"
-                        :class="cat.estado === 'Activo'
-                                ? 'bg-red-500 hover:bg-red-600'
-                                : 'bg-green-500 hover:bg-green-600'"
-                        class="px-3 py-1 text-white rounded text-sm">
+                <!-- Activar / Inactivar -->
+                <button 
+                  @click="toggleEstado(cat.id)"
+                  :class="cat.estado === 'Activo'
+                          ? 'bg-red-500 hover:bg-red-600'
+                          : 'bg-green-500 hover:bg-green-600'"
+                  class="px-3 py-1 text-white rounded text-sm"
+                >
                   {{ cat.estado === 'Activo' ? 'Inactivar' : 'Activar' }}
                 </button>
 
@@ -131,20 +152,23 @@ function toggleEstado(id, estadoActual) {
 
             </tr>
           </tbody>
+
         </table>
       </div>
 
       <!-- PAGINACIÓN -->
       <div class="mt-6 flex justify-between">
-        <button :disabled="!props.categorias.prev_page_url"
-                @click="router.get(props.categorias.prev_page_url)"
-                class="px-4 py-2 border rounded hover:bg-gray-100 disabled:opacity-50">
+        <button 
+          :disabled="!props.categorias.prev_page_url"
+          @click="router.get(props.categorias.prev_page_url)"
+          class="px-4 py-2 border rounded hover:bg-gray-100 disabled:opacity-50">
           ← Anterior
         </button>
 
-        <button :disabled="!props.categorias.next_page_url"
-                @click="router.get(props.categorias.next_page_url)"
-                class="px-4 py-2 border rounded hover:bg-gray-100 disabled:opacity-50">
+        <button 
+          :disabled="!props.categorias.next_page_url"
+          @click="router.get(props.categorias.next_page_url)"
+          class="px-4 py-2 border rounded hover:bg-gray-100 disabled:opacity-50">
           Siguiente →
         </button>
       </div>

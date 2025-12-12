@@ -15,49 +15,38 @@ use Illuminate\Support\Facades\Auth;
 
 class ReservaController extends Controller
 {
-    /* ==========================================================================
-       1. LISTADO DE RESERVAS CON FILTROS AVANZADOS
-       ========================================================================== */
+    /*
+     * 1. LISTADO DE RESERVAS PARA ADMIN/RECEPCIONISTA
+     * Permite buscar por cliente, habitación, rango de fechas y estado.
+     */
     public function index(Request $request)
     {
         $user = Auth::user();
 
-        // Filtros recibidos desde Vue
         $q      = trim((string)$request->query('q', ''));
         $estado = $request->query('estado', '');
         $desde  = $request->query('desde', '');
         $hasta  = $request->query('hasta', '');
 
-        // Construcción dinámica de filtros
         $reservas = Reserva::with(['usuario', 'habitacion', 'factura'])
-
-            // Búsqueda general: cliente / habitación / código
             ->when($q !== '', function ($query) use ($q) {
                 $query->where('codigo_reserva', 'like', "%$q%")
-                    ->orWhereHas('usuario', function ($u) use ($q) {
-                        $u->where('nombres', 'like', "%$q%")
-                          ->orWhere('apellidos', 'like', "%$q%");
-                    })
-                    ->orWhereHas('habitacion', function ($h) use ($q) {
-                        $h->where('numero_habitacion', 'like', "%$q%")
-                          ->orWhere('tipo', 'like', "%$q%");
-                    });
+                      ->orWhereHas('usuario', fn($u) => 
+                          $u->where('nombres', 'like', "%$q%")
+                            ->orWhere('apellidos', 'like', "%$q%")
+                      )
+                      ->orWhereHas('habitacion', fn($h) => 
+                          $h->where('numero_habitacion', 'like', "%$q%")
+                            ->orWhere('tipo', 'like', "%$q%")
+                      );
             })
-
-            // Filtrar por estado
             ->when($estado !== '', fn($q2) => $q2->where('estado', $estado))
-
-            // Filtrar por fecha ingreso
             ->when($desde !== '', fn($q2) => $q2->whereDate('fecha_ingreso', '>=', $desde))
-
-            // Filtrar por fecha salida
             ->when($hasta !== '', fn($q2) => $q2->whereDate('fecha_salida', '<=', $hasta))
-
             ->orderByDesc('created_at')
             ->paginate(10)
             ->withQueryString();
 
-        // Seleccionar vista según el rol en sesión
         $vista = $user->rol->nombre_rol === 'Recepcionista'
             ? 'Recepcionista/Reservas/Index'
             : 'Admin/Reservas/Index';
@@ -73,14 +62,15 @@ class ReservaController extends Controller
         ]);
     }
 
-    /* ==========================================================================
-       2. FORMULARIO CREAR RESERVA
-       ========================================================================== */
+    /*
+     * 2. FORMULARIO PARA CREAR UNA RESERVA
+     * Admin/Recepcionista pueden elegir cliente y habitación disponible.
+     */
     public function create()
     {
         $user = Auth::user();
 
-        // Habitaciones disponibles
+        // Solo mostrar habitaciones disponibles
         $habitaciones = Habitacion::where('estado', 'Disponible')
             ->get()
             ->map(fn($h) => [
@@ -89,7 +79,7 @@ class ReservaController extends Controller
                 'tipo' => $h->tipo
             ]);
 
-        // Si es cliente, solo se muestra él mismo
+        // Si es cliente, solo se muestra a sí mismo
         $usuarios = ($user->rol_id == 2)
             ? collect([$user])->map(fn($u) => [
                 'id' => $u->id,
@@ -102,7 +92,6 @@ class ReservaController extends Controller
                 'apellidos' => $u->apellidos
             ]);
 
-        // Vista según rol
         $vista = $user->rol->nombre_rol === 'Recepcionista'
             ? 'Recepcionista/Reservas/ReservaForm'
             : 'Admin/Reservas/ReservaForm';
@@ -115,9 +104,10 @@ class ReservaController extends Controller
         ]);
     }
 
-    /* ==========================================================================
-       3. GUARDAR RESERVA (CREA FACTURA Y DETALLE)
-       ========================================================================== */
+    /*
+     * 3. GUARDAR RESERVA DESDE ADMIN/RECEPCIONISTA
+     * Importante: actualiza la habitación a "Ocupada".
+     */
     public function store(Request $request)
     {
         $user = Auth::user();
@@ -131,10 +121,10 @@ class ReservaController extends Controller
             'descripcion'    => 'nullable|string',
         ]);
 
-        // Código único RES-ABC123
+        // Código único tipo RES-ABC123
         $codigo = 'RES-' . strtoupper(Str::random(6));
 
-        // Crear reserva
+        // Se crea la reserva
         $reserva = Reserva::create([
             'usuario_id'     => $request->usuario_id,
             'habitacion_id'  => $request->habitacion_id,
@@ -145,7 +135,12 @@ class ReservaController extends Controller
             'descripcion'    => $request->descripcion,
         ]);
 
-        // Crear factura
+        // Al crear la reserva, la habitación pasa a "Ocupada"
+        if ($reserva->habitacion) {
+            $reserva->habitacion->update(['estado' => 'Ocupada']);
+        }
+
+        // Crear factura base
         $ultimo = Factura::max('numero_factura') ?? 1000;
 
         $factura = Factura::create([
@@ -163,7 +158,7 @@ class ReservaController extends Controller
             'datos_empresa'     => '{}',
         ]);
 
-        // Generar línea de alojamiento
+        // Crear el detalle del alojamiento
         $this->generarDetalleAlojamiento($reserva, $factura);
 
         $ruta = $user->rol->nombre_rol === 'Recepcionista'
@@ -173,9 +168,9 @@ class ReservaController extends Controller
         return redirect()->route($ruta)->with('success', 'Reserva creada correctamente.');
     }
 
-    /* ==========================================================================
-       4. FORMULARIO EDITAR RESERVA
-       ========================================================================== */
+    /*
+     * 4. FORMULARIO EDITAR RESERVA
+     */
     public function edit($id)
     {
         $reserva = Reserva::with(['habitacion'])->findOrFail($id);
@@ -200,9 +195,10 @@ class ReservaController extends Controller
         return Inertia::render($vista, compact('reserva', 'usuarios', 'habitaciones'));
     }
 
-    /* ==========================================================================
-       5. ACTUALIZAR RESERVA + RECALCULAR ALOJAMIENTO
-       ========================================================================== */
+    /*
+     * 5. ACTUALIZAR RESERVA Y RECALCULAR FACTURA
+     * (Aquí cambiamos el "back()" por un redirect al índice)
+     */
     public function update(Request $request, Reserva $reserva)
     {
         $request->validate([
@@ -214,7 +210,6 @@ class ReservaController extends Controller
             'descripcion'    => 'nullable|string',
         ]);
 
-        // Actualizar reserva
         $reserva->update($request->only([
             'usuario_id',
             'habitacion_id',
@@ -224,17 +219,22 @@ class ReservaController extends Controller
             'descripcion'
         ]));
 
-        // Recalcular factura si existe
         if ($reserva->factura) {
             $this->generarDetalleAlojamiento($reserva, $reserva->factura, recalc: true);
         }
 
-        return back()->with('success', 'Reserva actualizada correctamente.');
+        // 🔁 En lugar de back(), redirigimos al índice según el rol
+        $user = Auth::user();
+        $ruta = $user->rol->nombre_rol === 'Recepcionista'
+            ? 'recepcionista.reservas.index'
+            : 'admin.reservas.index';
+
+        return redirect()->route($ruta)->with('success', 'Reserva actualizada correctamente.');
     }
 
-    /* ==========================================================================
-       6. ACTUALIZAR SOLO EL ESTADO DE LA RESERVA
-       ========================================================================== */
+    /*
+     * 6. ACTUALIZAR SOLO EL ESTADO (Check-in / Check-out)
+     */
     public function actualizarEstado(Request $request, Reserva $reserva)
     {
         $request->validate([
@@ -244,7 +244,7 @@ class ReservaController extends Controller
         $estadoNuevo = $request->estado;
         $estadoActual = $reserva->estado;
 
-        // Validación de transición entre estados
+        // Reglas de estados válidos
         $transicionValida =
             ($estadoActual === 'Pendiente' && $estadoNuevo === 'Confirmada') ||
             ($estadoActual === 'Confirmada' && $estadoNuevo === 'Completada') ||
@@ -258,7 +258,7 @@ class ReservaController extends Controller
         $reserva->estado = $estadoNuevo;
         $reserva->save();
 
-        // Actualizar estado de habitación
+        // Actualizar habitación según estado
         if ($estadoNuevo === 'Confirmada') {
             $reserva->habitacion()->update(['estado' => 'Ocupada']);
         } elseif (in_array($estadoNuevo, ['Completada', 'Cancelada'])) {
@@ -268,28 +268,35 @@ class ReservaController extends Controller
         return back()->with('success', "Estado actualizado a: {$estadoNuevo}");
     }
 
-    /* ==========================================================================
-       7. ELIMINAR RESERVA
-       ========================================================================== */
+    /*
+     * 7. "CANCELAR" RESERVA DESDE EL BOTÓN ROJO
+     * Usamos destroy, pero en vez de borrar, marcamos como Cancelada
+     * y liberamos la habitación.
+     */
     public function destroy(Reserva $reserva)
     {
-        $reserva->delete();
-        return back()->with('success', 'Reserva eliminada correctamente.');
+        // Cambiar estado de la reserva
+        $reserva->update(['estado' => 'Cancelada']);
+
+        // Liberar habitación
+        if ($reserva->habitacion) {
+            $reserva->habitacion->update(['estado' => 'Disponible']);
+        }
+
+        return back()->with('success', 'Reserva cancelada correctamente.');
     }
 
-    /* ==========================================================================
-       8. GENERAR / RECALCULAR DETALLE DE ALOJAMIENTO
-       ========================================================================== */
+    /*
+     * 8. CREAR O RECALCULAR EL DETALLE DE ALOJAMIENTO
+     */
     private function generarDetalleAlojamiento(Reserva $reserva, Factura $factura, bool $recalc = false)
     {
         if ($recalc) {
-            // Eliminar detalle anterior de alojamiento
             DetalleFactura::where('factura_id', $factura->id)
                 ->whereNull('servicio_id')
                 ->delete();
         }
 
-        // Calcular noches
         $ingreso = new \DateTime($reserva->fecha_ingreso);
         $salida  = new \DateTime($reserva->fecha_salida);
         $noches  = $ingreso->diff($salida)->days;
@@ -301,7 +308,6 @@ class ReservaController extends Controller
         $impuesto = round($subtotal * 0.19, 2);
         $total    = $subtotal + $impuesto;
 
-        // Crear línea de detalle
         DetalleFactura::create([
             'factura_id'      => $factura->id,
             'servicio_id'     => null,
@@ -313,7 +319,6 @@ class ReservaController extends Controller
             'total'           => $total,
         ]);
 
-        // Actualizar totales de factura
         $factura->update([
             'subtotal' => $factura->detalles()->sum('subtotal'),
             'impuestos'=> $factura->detalles()->sum('impuesto'),
