@@ -38,9 +38,14 @@ const submit = () => form.post('/login');
     </div>
 
     <form @submit.prevent="submit" class="flex flex-col gap-6">
+      <p class="text-sm text-gray-500">
+        Los campos marcados con <span class="text-red-500">*</span> son obligatorios.
+      </p>
       <!-- Correo -->
       <div class="grid gap-2">
-        <Label for="correo">Correo electrónico</Label>
+        <Label for="correo">
+          Correo electrónico <span class="text-red-500">*</span>
+        </Label>
         <Input
           id="correo"
           type="email"
@@ -53,7 +58,9 @@ const submit = () => form.post('/login');
 
       <!-- Contraseña -->
       <div class="grid gap-2">
-        <Label for="contrasena">Contraseña</Label>
+        <Label for="contrasena">
+          Contraseña <span class="text-red-500">*</span>
+        </Label>
         <Input
           id="contrasena"
           type="password"
@@ -61,6 +68,9 @@ const submit = () => form.post('/login');
           required
           placeholder="••••••••"
         />
+        <small class="text-gray-500">
+          Ingrese la contraseña con la que se registró.
+        </small>
         <InputError :message="form.errors.contrasena" />
       </div>
 

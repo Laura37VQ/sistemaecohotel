@@ -137,22 +137,32 @@ function submit() {
       </h2>
 
       <form @submit.prevent="submit" class="space-y-6">
+      <p class="text-sm text-gray-500 mb-4">
+        Los campos marcados con <span class="text-red-500">*</span> son obligatorios.
+      </p>
 
         <!-- Número -->
         <div>
-          <label class="block text-sm font-medium mb-1">Número</label>
+          <label class="block text-sm font-medium mb-1">
+            Número <span class="text-red-500">*</span>
+          </label>
           <input 
             v-model="form.numero_habitacion" 
             type="text"
             :class="['w-full border p-2 rounded shadow-sm', (localErrors.numero_habitacion || form.errors.numero_habitacion) ? 'border-red-500' : 'border-gray-300']"
           />
+          <p class="text-xs text-gray-500">
+            Ejemplo: 101, 202, A-03.
+          </p>
           <p v-if="localErrors.numero_habitacion" class="text-red-600 text-sm mt-1">{{ localErrors.numero_habitacion }}</p>
           <p v-if="form.errors.numero_habitacion" class="text-red-600 text-sm mt-1">{{ form.errors.numero_habitacion }}</p>
         </div>
 
         <!-- Tipo -->
         <div>
-          <label class="block text-sm font-medium mb-1">Tipo</label>
+          <label class="block text-sm font-medium mb-1">
+            Tipo <span class="text-red-500">*</span>
+          </label>
           <select v-model="form.tipo" class="w-full border p-2 rounded shadow-sm border-gray-300">
             <option>Individual</option>
             <option>Doble</option>
@@ -164,30 +174,42 @@ function submit() {
         <!-- Capacidad y Precio -->
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium mb-1">Capacidad</label>
+            <label class="block text-sm font-medium mb-1">
+              Capacidad <span class="text-red-500">*</span>
+            </label>
             <input 
               v-model="form.capacidad_personas" 
               type="number" 
               :class="['w-full border p-2 rounded shadow-sm', (localErrors.capacidad_personas || form.errors.capacidad_personas) ? 'border-red-500' : 'border-gray-300']"
             />
+            <p class="text-xs text-gray-500">
+              Número máximo de personas permitidas.
+            </p>
             <p v-if="localErrors.capacidad_personas" class="text-red-600 text-sm mt-1">{{ localErrors.capacidad_personas }}</p>
           </div>
 
           <div>
-            <label class="block text-sm font-medium mb-1">Precio</label>
+            <label class="block text-sm font-medium mb-1">
+              Precio <span class="text-red-500">*</span>
+            </label>
             <input 
               v-model="form.precio" 
               type="number" 
               step="0.01"
               :class="['w-full border p-2 rounded shadow-sm', (localErrors.precio || form.errors.precio) ? 'border-red-500' : 'border-gray-300']"
             />
+            <p class="text-xs text-gray-500">
+              Valor por noche en pesos colombianos.
+            </p>
             <p v-if="localErrors.precio" class="text-red-600 text-sm mt-1">{{ localErrors.precio }}</p>
           </div>
         </div>
 
         <!-- Estado -->
         <div>
-          <label class="block text-sm font-medium mb-1">Estado</label>
+          <label class="block text-sm font-medium mb-1">
+              Estado <span class="text-red-500">*</span>
+          </label>
           <select v-model="form.estado" class="w-full border p-2 rounded shadow-sm border-gray-300">
             <option>Disponible</option>
             <option>Ocupada</option>
@@ -197,7 +219,9 @@ function submit() {
 
         <!-- Descripción -->
         <div>
-          <label class="block text-sm font-medium mb-1">Descripción</label>
+          <label class="block text-sm font-medium mb-1">
+              Descripción <span class="text-red-500">*</span>
+          </label>
           <textarea 
             v-model="form.descripcion" 
             :class="['w-full border p-2 rounded shadow-sm', (localErrors.descripcion || form.errors.descripcion) ? 'border-red-500' : 'border-gray-300']"
@@ -207,7 +231,9 @@ function submit() {
 
         <!-- Foto -->
         <div>
-          <label class="block text-sm font-medium mb-1">Foto</label>
+          <label class="block text-sm font-medium mb-1">
+              Foto <span class="text-red-500">*</span>
+          </label>
 
           <!-- Foto actual en edición -->
           <div v-if="props.habitacion && props.habitacion.foto" class="mb-2">
@@ -215,6 +241,9 @@ function submit() {
           </div>
 
           <input type="file" @change="handleFileChange" accept="image/*" class="w-full border p-2 rounded shadow-sm border-gray-300"/>
+          <p class="text-xs text-gray-500">
+            Formato recomendado: JPG o PNG. Tamaño máximo sugerido: 2MB.
+          </p>
 
           <!-- Error si foto no se sube al crear -->
           <p v-if="localErrors.foto" class="text-red-600 text-sm mt-1">{{ localErrors.foto }}</p>

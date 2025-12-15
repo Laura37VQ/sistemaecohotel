@@ -76,6 +76,10 @@ function generarFactura() {
       <h2 class="text-3xl font-bold text-[#2E7D32] text-center mb-10">
         Servicios adicionales disponibles 
       </h2>
+      <p class="text-center text-gray-600 mb-6">
+        Selecciona los servicios que deseas agregar a tu reserva y ajusta la cantidad según tu necesidad.
+      </p>
+
 
       <!--  Si hay error -->
       <div v-if="error" class="text-center bg-red-50 border border-red-200 text-red-700 p-6 rounded-2xl shadow-sm">
@@ -177,9 +181,10 @@ function generarFactura() {
 
           <button
             @click="generarFactura"
-            class="bg-[#2E7D32] text-white px-8 py-3 rounded-xl text-lg hover:bg-green-800 transition shadow"
+            :disabled="seleccionados.length === 0"
+            class="bg-[#2E7D32] text-white px-8 py-3 rounded-xl text-lg transition shadow disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-800"
           >
-            {{ seleccionados.length > 0 ? 'Generar / Actualizar factura' : 'Generar factura' }}
+            {{ seleccionados.length > 0 ? 'Generar / Actualizar factura' : 'Seleccione al menos un servicio' }}
           </button>
         </div>
       </div>

@@ -45,12 +45,20 @@ function submit() {
       <h2 class="text-2xl font-bold mb-4 text-[#2E7D32]">
         {{ props.reserva ? 'Editar Reserva' : 'Nueva Reserva' }}
       </h2>
+      <p class="text-sm text-gray-500 mb-4">
+        Los campos marcados con <span class="text-red-500">*</span> son obligatorios.
+      </p>
 
       <form @submit.prevent="submit" class="space-y-4">
         <!-- Cliente -->
         <div>
           <div class="flex justify-between items-center">
-            <label class="block text-sm font-medium">Cliente</label>
+            <label class="block text-sm font-medium">
+              Cliente <span class="text-red-500">*</span>
+            </label>
+            <small class="text-gray-500">
+              Seleccione el cliente que realizará la reserva.
+            </small>
             <!-- (Opcional) habilitar alta rápida luego -->
             <!-- <a href="/recepcionista/clientes/create" class="text-sm text-[#2E7D32] hover:underline">Nuevo cliente</a> -->
           </div>
@@ -67,7 +75,9 @@ function submit() {
 
         <!-- Habitación -->
         <div>
-          <label class="block text-sm font-medium">Habitación</label>
+          <label class="block text-sm font-medium">
+            Habitación <span class="text-red-500">*</span>
+          </label>
           <select v-model="form.habitacion_id" class="w-full border p-2 rounded shadow-sm">
             <option value="">Seleccionar habitación</option>
             <option v-for="h in props.habitaciones" :key="h.id" :value="h.id">
@@ -82,25 +92,35 @@ function submit() {
         <!-- Fechas -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium">Fecha ingreso</label>
+            <label class="block text-sm font-medium">
+              Fecha ingreso <span class="text-red-500">*</span>
+            </label>
             <input
               type="date"
               v-model="form.fecha_ingreso"
               class="w-full border p-2 rounded shadow-sm"
               :min="hoy"
             />
+            <small class="text-gray-500">
+              La fecha de ingreso no puede ser anterior a hoy.
+            </small>
             <div v-if="form.errors.fecha_ingreso" class="text-red-600 text-sm">
               {{ form.errors.fecha_ingreso }}
             </div>
           </div>
           <div>
-            <label class="block text-sm font-medium">Fecha salida</label>
+            <label class="block text-sm font-medium">
+              Fecha salida <span class="text-red-500">*</span>
+            </label>
             <input
               type="date"
               v-model="form.fecha_salida"
               :min="form.fecha_ingreso || hoy"
               class="w-full border p-2 rounded shadow-sm"
             />
+            <small class="text-gray-500">
+              Debe ser posterior a la fecha de ingreso.
+            </small>
             <div v-if="form.errors.fecha_salida" class="text-red-600 text-sm">
               {{ form.errors.fecha_salida }}
             </div>
@@ -109,7 +129,9 @@ function submit() {
 
         <!-- Estado -->
         <div>
-          <label class="block text-sm font-medium">Estado</label>
+          <label class="block text-sm font-medium">
+            Estado <span class="text-red-500">*</span>
+          </label>
           <select v-model="form.estado" class="w-full border p-2 rounded shadow-sm">
             <option value="Pendiente">Pendiente</option>
             <option value="Confirmada">Confirmada</option>

@@ -132,6 +132,9 @@ function exportPDF() {
         Tasa de ocupación general:
         <b>{{ tasaOcupacion }}%</b>
       </p>
+      <p class="text-sm text-gray-500 mb-6">
+        La tasa de ocupación representa el porcentaje de habitaciones ocupadas frente al total disponible en el período seleccionado.
+      </p>
 
       <!-- Filtros -->
       <div class="flex gap-2 mb-6 flex-wrap">
@@ -153,6 +156,13 @@ function exportPDF() {
           PDF
         </button>
       </div>
+      <p class="text-sm text-gray-500 mb-6">
+          Seleccione un rango de fechas para analizar la ocupación del hotel. 
+          Si no se seleccionan fechas, el sistema mostrará la información general.
+        </p>
+      <p class="text-sm text-gray-500 mb-6">
+        Puede exportar el reporte en formato Excel o PDF para su análisis o respaldo.
+      </p>
 
       <!-- Gráfico -->
       <div class="bg-white p-4 rounded-lg shadow mb-6">

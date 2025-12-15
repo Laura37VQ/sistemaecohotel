@@ -41,6 +41,9 @@ function buscar() {
           Ingresa tus fechas para ver las habitaciones disponibles.
         </p>
       </div>
+      <p class="text-sm text-gray-500 mt-3">
+        Los campos marcados con <span class="text-red-500">*</span> son obligatorios.
+      </p>
 
       <!-- Formulario -->
       <form
@@ -48,17 +51,24 @@ function buscar() {
         class="grid md:grid-cols-2 gap-6 bg-white p-6 rounded-2xl shadow"
       >
         <div>
-          <label class="block font-semibold text-gray-700 mb-1">Fecha de ingreso</label>
+          <label class="block font-semibold text-gray-700 mb-1">
+            Fecha de ingreso <span class="text-red-500">*</span>
+          </label>
           <input
             v-model="form.fecha_ingreso"
             type="date"
             class="border border-gray-300 rounded-lg w-full p-2 focus:outline-none focus:ring-2 focus:ring-[#2E7D32]"
             required
           />
+          <small class="text-gray-500">
+            Seleccione la fecha en la que desea ingresar al hotel.
+          </small>
         </div>
 
         <div>
-          <label class="block font-semibold text-gray-700 mb-1">Fecha de salida</label>
+          <label class="block font-semibold text-gray-700 mb-1">
+            Fecha de salida <span class="text-red-500">*</span>
+          </label>
           <input
             v-model="form.fecha_salida"
             type="date"
@@ -116,7 +126,7 @@ function buscar() {
 
       <!-- Sin resultados -->
       <div v-else class="mt-10 text-center text-gray-500 italic">
-        No hay habitaciones disponibles para las fechas seleccionadas.
+        No se encontraron habitaciones disponibles para el rango de fechas seleccionado. Intente modificar las fechas de búsqueda.
       </div>
     </div>
   </ClienteLayout>

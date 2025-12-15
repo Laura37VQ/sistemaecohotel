@@ -78,6 +78,13 @@ function exportPDF() {
         Total clientes: <b>{{ totalClientes }}</b> |
         Con reservas: <b>{{ clientesConReservas }}</b>
       </p>
+      <p class="text-sm text-gray-500 mb-6">
+        El total de clientes corresponde a los usuarios registrados en el sistema.
+        El indicador "Con reservas" muestra aquellos clientes que han realizado al menos una reserva, permitiendo analizar el nivel de conversión del sistema.
+      </p>
+      <p class="text-sm text-gray-500 mb-3 text-center">
+        El gráfico muestra la proporción de clientes que han realizado reservas frente a aquellos que aún no han utilizado los servicios del hotel.
+      </p>
 
       <!-- Gráfico de participación -->
       <div
@@ -86,6 +93,9 @@ function exportPDF() {
       >
         <Pie :data="chartData" :options="chartOptions" />
       </div>
+      <p class="text-sm text-gray-500 mb-3">
+        El reporte puede exportarse en formato Excel o PDF para análisis comercial, seguimiento de clientes y toma de decisiones administrativas.
+      </p>
 
       <!-- Botones de exportación -->
       <div class="flex gap-2 mb-6">

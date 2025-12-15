@@ -29,6 +29,9 @@ function editarReserva(id) {
       <h2 class="text-4xl font-extrabold text-[#2E7D32] mb-10 text-center tracking-tight">
          Mis Reservas
       </h2>
+      <p class="text-gray-600 text-center mb-8">
+        Desde aquí puedes consultar, modificar o cancelar tus reservas activas.
+      </p>
 
       <!-- Si hay reservas -->
       <div v-if="reservas.length" class="grid md:grid-cols-2 gap-6">

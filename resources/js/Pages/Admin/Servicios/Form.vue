@@ -84,9 +84,17 @@ function submit() {
       </h2>
 
       <form @submit.prevent="submit" class="space-y-6 text-lg">
+        <p class="text-sm text-gray-500 mb-6 text-center">
+          Los campos marcados con <span class="text-red-500">*</span> son obligatorios.
+        </p>
         <!-- Categoría -->
         <div>
-          <label class="block text-gray-700 font-semibold mb-1">Categoría</label>
+          <label class="block text-gray-700 font-semibold mb-1">
+            Categoría <span class="text-red-500">*</span>
+          </label>
+          <p class="text-xs text-gray-500">
+            Seleccione la categoría a la que pertenece el servicio.
+          </p>
           <select v-model="form.categoria_id"
             class="w-full border rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-green-600">
             <option value="">Seleccione una categoría</option>
@@ -101,7 +109,13 @@ function submit() {
 
         <!-- Nombre -->
         <div>
-          <label class="block text-gray-700 font-semibold mb-1">Nombre</label>
+          <label class="block text-gray-700 font-semibold mb-1">
+            Nombre <span class="text-red-500">*</span>
+          </label>
+          <p class="text-xs text-gray-500">
+            Ejemplo: Desayuno campestre, Tour ecológico.
+          </p>
+
           <input v-model="form.nombre" type="text"
             class="w-full border rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-green-600" />
           <p v-if="form.errors.nombre" class="text-red-600 text-sm mt-1">{{ form.errors.nombre }}</p>
@@ -109,21 +123,36 @@ function submit() {
 
         <!-- Descripción -->
         <div>
-          <label class="block text-gray-700 font-semibold mb-1">Descripción</label>
+          <label class="block text-gray-700 font-semibold mb-1">
+            Descripción <span class="text-gray-400">(opcional)</span>
+          </label>
+          <p class="text-xs text-gray-500">
+            Información adicional del servicio ofrecido.
+          </p>
           <textarea v-model="form.descripcion" rows="3"
             class="w-full border rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-green-600"></textarea>
         </div>
 
         <!-- Precio -->
         <div>
-          <label class="block text-gray-700 font-semibold mb-1">Precio</label>
+          <label class="block text-gray-700 font-semibold mb-1">
+            Precio <span class="text-red-500">*</span>
+          </label>
+          <p class="text-xs text-gray-500">
+            Valor del servicio en pesos colombianos (COP).
+          </p>
           <input v-model="form.precio" type="number" step="0.01" min="0"
             class="w-full border rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-green-600" />
         </div>
 
         <!-- Estado -->
         <div>
-          <label class="block text-gray-700 font-semibold mb-1">Estado</label>
+          <label class="block text-gray-700 font-semibold mb-1">
+            Estado <span class="text-red-500">*</span>
+          </label>
+          <p class="text-xs text-gray-500">
+            Los servicios inactivos no estarán disponibles para los clientes.
+          </p>
           <select v-model="form.estado"
             class="w-full border rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-green-600">
             <option value="Activo">Activo</option>
@@ -133,7 +162,12 @@ function submit() {
 
         <!-- Foto -->
         <div>
-          <label class="block text-gray-700 font-semibold mb-1">Foto del servicio</label>
+          <label class="block text-gray-700 font-semibold mb-1">
+            Foto del servicio <span class="text-red-500">*</span>
+          </label>
+          <p class="text-xs text-gray-500">
+            Imagen representativa del servicio (opcional).
+          </p>
           <input type="file" @change="handleImageChange" accept="image/*"
             class="w-full border rounded-xl px-4 py-3 text-base" />
           <div v-if="previewUrl" class="mt-3">

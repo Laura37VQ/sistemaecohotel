@@ -112,7 +112,16 @@ function exportPDF() {
           PDF
         </button>
       </div>
-
+      <p class="text-sm text-gray-500 mb-6">
+        Seleccione un rango de fechas para consultar los ingresos del hotel. Si no se seleccionan fechas, se mostrarán los ingresos generales registrados.
+      </p>
+      <p class="text-gray-600 mb-4">
+        Total facturado: <b>${{ totalIngresos.toLocaleString() }}</b> |
+        Promedio por factura: <b>${{ promedioFactura.toLocaleString() }}</b>
+      </p>
+      <p class="text-sm text-gray-500 mb-6">
+        El total facturado corresponde a la suma de todas las facturas emitidas en el período seleccionado, mientras que el promedio por factura representa el valor medio de cada transacción.
+      </p>
       <!-- GRÁFICO -->
       <div class="bg-white p-4 rounded-lg shadow mb-6">
         <Bar :data="chartData" :options="chartOptions" />

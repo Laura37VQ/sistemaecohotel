@@ -43,23 +43,33 @@ function guardarReserva() {
         <p class="text-[#2E7D32] font-bold mt-3 text-lg">
           $ {{ Number(habitacion.precio).toLocaleString() }} / noche
         </p>
+        <p class="text-sm text-gray-500 mt-4">
+          Los campos marcados con <span class="text-red-500">*</span> son obligatorios.
+        </p>
 
         <!-- Formulario -->
         <form @submit.prevent="guardarReserva" class="mt-8 space-y-5">
           <!-- Fechas -->
           <div class="grid md:grid-cols-2 gap-6">
             <div>
-              <label class="block text-gray-700 font-medium mb-1">Fecha de ingreso</label>
+              <label class="block text-gray-700 font-medium mb-1">
+                Fecha de ingreso <span class="text-red-500">*</span>
+              </label>
               <input
                 v-model="form.fecha_ingreso"
                 type="date"
                 class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-[#2E7D32] focus:outline-none"
                 required
               />
+              <small class="text-gray-500">
+                Seleccione la fecha en la que desea ingresar al hotel.
+              </small>
             </div>
 
             <div>
-              <label class="block text-gray-700 font-medium mb-1">Fecha de salida</label>
+              <label class="block text-gray-700 font-medium mb-1">
+                Fecha de salida <span class="text-red-500">*</span>
+              </label>
               <input
                 v-model="form.fecha_salida"
                 type="date"
@@ -71,7 +81,9 @@ function guardarReserva() {
 
           <!-- Observaciones -->
           <div>
-            <label class="block text-gray-700 font-medium mb-1">Observaciones (opcional)</label>
+            <label class="block text-gray-700 font-medium mb-1">
+              Observaciones (opcional)
+            </label>
             <textarea
               v-model="form.descripcion"
               rows="3"

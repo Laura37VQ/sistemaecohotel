@@ -25,6 +25,10 @@ const props = defineProps({
           <h2 class="text-4xl font-extrabold text-[#2E7D32] tracking-tight">
             Mis Facturas
           </h2>
+          <p class="text-sm text-gray-500 mt-3">
+            Desde esta sección puedes consultar el estado de tus facturas y descargar los comprobantes de pago disponibles.
+          </p>
+
           <p class="text-gray-600 mt-2 text-base">
             Consulta y descarga tus comprobantes de pago del
             <b>Eco Hotel Villa del Sol</b>.

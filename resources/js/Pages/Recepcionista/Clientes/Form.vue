@@ -73,53 +73,84 @@ function submit() {
       <h2 class="text-2xl font-bold mb-4 text-[#2E7D32]">
         {{ editando ? 'Editar cliente' : 'Nuevo cliente' }}
       </h2>
+      <p class="text-sm text-gray-500 mb-4">
+        Los campos marcados con <span class="text-red-500">*</span> son obligatorios.
+      </p>
 
       <form @submit.prevent="submit" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium">Nombres</label>
+            <label class="block text-sm font-medium">
+              Nombres <span class="text-red-500">*</span>
+            </label>
+            <input
+            v-model="form.nombres"
+            type="text"
+            required
+            class="w-full border p-2 rounded"
+            />
             <input v-model="form.nombres" type="text" class="w-full border p-2 rounded" />
             <div v-if="form.errors.nombres" class="text-red-600 text-sm">{{ form.errors.nombres }}</div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium">Apellidos</label>
+             <label class="block text-sm font-medium">
+              Apellidos <span class="text-red-500">*</span>
+            </label>
             <input v-model="form.apellidos" type="text" class="w-full border p-2 rounded" />
             <div v-if="form.errors.apellidos" class="text-red-600 text-sm">{{ form.errors.apellidos }}</div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium">Documento</label>
+            <label class="block text-sm font-medium">
+              Documento <span class="text-red-500">*</span>
+            </label>
             <input v-model="form.documento_identidad" type="text" class="w-full border p-2 rounded" />
+            <small class="text-gray-500">
+              Ingrese solo números, sin puntos ni espacios.
+            </small>
             <div v-if="form.errors.documento_identidad" class="text-red-600 text-sm">{{ form.errors.documento_identidad }}</div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium">Fecha nacimiento</label>
+            <label class="block text-sm font-medium">
+              Fecha nacimiento <span class="text-red-500">*</span>
+            </label>
             <input v-model="form.fecha_nacimiento" type="date" class="w-full border p-2 rounded" />
+            <small class="text-gray-500">
+              Ejemplo: correo@ejemplo.com
+            </small>
             <div v-if="form.errors.fecha_nacimiento" class="text-red-600 text-sm">{{ form.errors.fecha_nacimiento }}</div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium">Correo</label>
+            <label class="block text-sm font-medium">
+              Correo <span class="text-red-500">*</span>
+            </label>
             <input v-model="form.correo" type="email" class="w-full border p-2 rounded" />
             <div v-if="form.errors.correo" class="text-red-600 text-sm">{{ form.errors.correo }}</div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium">Teléfono</label>
+            <label class="block text-sm font-medium">
+              Teléfono <span class="text-red-500">*</span>
+            </label>
             <input v-model="form.telefono" type="text" class="w-full border p-2 rounded" />
             <div v-if="form.errors.telefono" class="text-red-600 text-sm">{{ form.errors.telefono }}</div>
           </div>
 
           <div class="md:col-span-2">
-            <label class="block text-sm font-medium">Dirección</label>
+            <label class="block text-sm font-medium">
+              Dirección <span class="text-red-500">*</span>
+            </label>
             <input v-model="form.direccion" type="text" class="w-full border p-2 rounded" />
             <div v-if="form.errors.direccion" class="text-red-600 text-sm">{{ form.errors.direccion }}</div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium">Nombre de usuario</label>
+            <label class="block text-sm font-medium">
+              Nombre de usuario <span class="text-red-500">*</span>
+            </label>
             <input v-model="form.nombre_usuario" type="text" class="w-full border p-2 rounded" />
             <div v-if="form.errors.nombre_usuario" class="text-red-600 text-sm">{{ form.errors.nombre_usuario }}</div>
           </div>

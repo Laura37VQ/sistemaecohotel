@@ -63,72 +63,103 @@ const submit = () => {
 
     <form @submit.prevent="submit" class="flex flex-col gap-6">
       <div class="grid gap-6">
+
+        <p class="text-sm text-gray-500">
+          Los campos marcados con <span class="text-red-500">*</span> son obligatorios.
+        </p>
+
         <!-- Nombres -->
         <div class="grid gap-2">
-          <Label for="nombres">Nombres</Label>
+          <Label for="nombres">
+            Nombres <span class="text-red-500">*</span>
+          </Label>
           <Input id="nombres" type="text" v-model="form.nombres" required placeholder="Ingrese sus nombres" />
           <InputError :message="form.errors.nombres" />
         </div>
 
         <!-- Apellidos -->
         <div class="grid gap-2">
-          <Label for="apellidos">Apellidos</Label>
+          <Label for="apellidos">
+            Apellidos <span class="text-red-500">*</span>
+          </Label>
           <Input id="apellidos" type="text" v-model="form.apellidos" required placeholder="Ingrese sus apellidos" />
           <InputError :message="form.errors.apellidos" />
         </div>
 
         <!-- Documento identidad -->
         <div class="grid gap-2">
-          <Label for="documento_identidad">Documento de identidad</Label>
+          <Label for="documento_identidad">
+            Documento de identidad <span class="text-red-500">*</span>
+          </Label>
           <Input id="documento_identidad" type="text" v-model="form.documento_identidad" required placeholder="Ingrese su número de documento" />
+          <small class="text-gray-500">
+            Ingrese solo números, sin puntos ni espacios.
+          </small>
           <InputError :message="form.errors.documento_identidad" />
         </div>
 
         <!-- Fecha nacimiento -->
         <div class="grid gap-2">
-          <Label for="fecha_nacimiento">Fecha de nacimiento</Label>
+          <Label for="fecha_nacimiento">
+            Fecha de nacimiento <span class="text-red-500">*</span>
+          </Label>
           <Input id="fecha_nacimiento" type="date" v-model="form.fecha_nacimiento" required />
           <InputError :message="form.errors.fecha_nacimiento" />
         </div>
 
         <!-- Nombre usuario -->
         <div class="grid gap-2">
-          <Label for="nombre_usuario">Nombre de usuario</Label>
+          <Label for="nombre_usuario">
+            Nombre de usuario<span class="text-red-500">*</span>
+          </Label>
           <Input id="nombre_usuario" type="text" v-model="form.nombre_usuario" required placeholder="Ingrese un nombre de usuario" />
           <InputError :message="form.errors.nombre_usuario" />
         </div>
 
         <!-- Correo -->
         <div class="grid gap-2">
-          <Label for="correo">Correo electrónico</Label>
+          <Label for="correo">
+            Correo electrónico<span class="text-red-500">*</span>
+          </Label>
           <Input id="correo" type="email" v-model="form.correo" required placeholder="correo@ejemplo.com" />
           <InputError :message="form.errors.correo" />
         </div>
 
         <!-- Teléfono -->
         <div class="grid gap-2">
-          <Label for="telefono">Teléfono</Label>
+          <Label for="telefono">
+            Teléfono<span class="text-red-500">*</span>
+          </Label>
           <Input id="telefono" type="tel" v-model="form.telefono" placeholder="Ingrese su número de teléfono" />
           <InputError :message="form.errors.telefono" />
         </div>
 
         <!-- Dirección -->
         <div class="grid gap-2">
-          <Label for="direccion">Dirección</Label>
+          <Label for="direccion">
+            Dirección<span class="text-red-500">*</span>
+          </Label>
           <Input id="direccion" type="text" v-model="form.direccion" placeholder="Ingrese su dirección" />
           <InputError :message="form.errors.direccion" />
         </div>
 
         <!-- Contraseña -->
         <div class="grid gap-2">
-          <Label for="contrasena">Contraseña</Label>
+          <Label for="contrasena">
+            Contraseña<span class="text-red-500">*</span>
+          </Label>
           <Input id="contrasena" type="password" v-model="form.contrasena" required placeholder="Ingrese su contraseña" />
+          <small class="text-gray-500">
+            Debe contener mínimo 8 caracteres.
+          </small>
           <InputError :message="form.errors.contrasena" />
         </div>
 
         <!-- Confirmar contraseña -->
         <div class="grid gap-2">
-          <Label for="contrasena_confirmation">Confirmar contraseña</Label>
+          <Label for="contrasena_confirmation">
+            Confirmar contraseña<span class="text-red-500">*</span>
+          </Label>
           <Input id="contrasena_confirmation" type="password" v-model="form.contrasena_confirmation" required placeholder="Repita su contraseña" />
           <InputError :message="form.errors.contrasena_confirmation" />
         </div>

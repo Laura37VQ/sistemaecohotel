@@ -67,9 +67,17 @@ function submit() {
       </h2>
 
       <form @submit.prevent="submit" class="space-y-4">
+        <p class="text-sm text-gray-500 mb-4 text-center">
+          Los campos marcados con <span class="text-red-500">*</span> son obligatorios.
+        </p>
         <!-- Nombre -->
         <div>
-          <label class="block text-sm font-medium">Nombre de la categoría</label>
+          <label class="block text-sm font-medium">
+            Nombre de la categoría <span class="text-red-500">*</span>
+          </label>
+          <p class="text-xs text-gray-500">
+            Ejemplo: Spa, Restaurante, Tours, Bienestar.
+          </p>
           <input
             v-model="form.nombre_categoria"
             type="text"
@@ -83,7 +91,12 @@ function submit() {
 
         <!-- Descripción -->
         <div>
-          <label class="block text-sm font-medium">Descripción</label>
+          <label class="block text-sm font-medium">
+            Descripción <span class="text-red-500">*</span>
+          </label>
+          <p class="text-xs text-gray-500">
+            Breve descripción del tipo de servicios que agrupa esta categoría.
+          </p>
           <textarea
             v-model="form.descripcion"
             class="w-full border p-2 rounded shadow-sm"
@@ -96,7 +109,9 @@ function submit() {
 
         <!-- Estado -->
         <div>
-          <label class="block text-sm font-medium">Estado</label>
+          <label class="block text-sm font-medium">
+            Estado <span class="text-red-500">*</span>
+          </label>
           <select v-model="form.estado" class="w-full border p-2 rounded shadow-sm" required>
             <option value="Activo">Activo</option>
             <option value="Inactivo">Inactivo</option>

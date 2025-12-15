@@ -27,6 +27,9 @@ function actualizar() {
         <h2 class="text-3xl font-bold text-[#2E7D32] mb-8 text-center">
           Editar Reserva
         </h2>
+        <p class="text-gray-600 text-center mb-8">
+          Desde esta pantalla puedes modificar las fechas de tu reserva y agregar observaciones adicionales.
+        </p>
 
         <form @submit.prevent="actualizar" class="space-y-6">
           <div>
